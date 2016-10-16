@@ -173,6 +173,7 @@ void downloadCallback(String filename, int16_t bytesDownloaded, int16_t bytesTot
 // Download the bitmaps
 void downloadResources() {
   tft.fillScreen(ILI9341_BLACK);
+  tft.setFont(&ArialRoundedMTBold_14);
   char id[5];
   for (int i = 0; i < 21; i++) {
     sprintf(id, "%02d", i);
@@ -193,6 +194,7 @@ void downloadResources() {
 // Update the internet based information and update screen
 void updateData() {
   tft.fillScreen(ILI9341_BLACK);
+  tft.setFont(&ArialRoundedMTBold_14);
   drawProgress(20, "Updating time...");
   timeClient.updateTime();
   drawProgress(50, "Updating conditions...");
