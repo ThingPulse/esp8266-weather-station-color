@@ -185,7 +185,7 @@ void downloadResources() {
     tft.fillRect(0, 120, 240, 40, ILI9341_BLACK);
     webResource.downloadFile("http://www.squix.org/blog/wunderground/mini/" + wundergroundIcons[i] + ".bmp", "/mini/" + wundergroundIcons[i] + ".bmp", _downloadCallback);
   }
-  for (int i = 0; i < 23; i++) {
+  for (int i = 0; i < 24; i++) {
     tft.fillRect(0, 120, 240, 40, ILI9341_BLACK);
     webResource.downloadFile("http://www.squix.org/blog/moonphase_L" + String(i) + ".bmp", "/moon" + String(i) + ".bmp", _downloadCallback);
   }
