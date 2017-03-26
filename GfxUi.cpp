@@ -145,8 +145,8 @@ void GfxUi::drawBmp(String filename, uint8_t x, uint16_t y) {
         if((x+w-1) >= _tft->width())  w = _tft->width()  - x;
         if((y+h-1) >= _tft->height()) h = _tft->height() - y;
 
-        // Set TFT address window to clipped image bounds
-        _tft->setAddrWindow(x, y, x+w-1, y+h-1);
+        // Open write access to the tft
+        _tft->startWrite();
 
         for (row=0; row<h; row++) { // For each scanline...
 
@@ -166,6 +166,7 @@ void GfxUi::drawBmp(String filename, uint8_t x, uint16_t y) {
           }
 
           for (col=0; col<w; col++) { // For each pixel...
+
             // Time to read more pixel data?
             if (buffidx >= sizeof(sdbuffer)) { // Indeed
               bmpFile.read(sdbuffer, sizeof(sdbuffer));
@@ -176,10 +177,15 @@ void GfxUi::drawBmp(String filename, uint8_t x, uint16_t y) {
             b = sdbuffer[buffidx++];
             g = sdbuffer[buffidx++];
             r = sdbuffer[buffidx++];
-            _tft->pushColor(_tft->color565(r,g,b));
+            
+            _tft->writePixel(x+col,y+row,_tft->color565(r,g,b));
+
             yield();
           } // end pixel
         } // end scanline
+
+        _tft->endWrite();
+        
         Serial.print(F("Loaded in "));
         Serial.print(millis() - startTime);
         Serial.println(" ms");
@@ -210,4 +216,3 @@ uint32_t GfxUi::read32(File &f) {
   ((uint8_t *)&result)[3] = f.read(); // MSB
   return result;
 }
-
