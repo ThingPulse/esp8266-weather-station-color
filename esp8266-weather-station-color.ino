@@ -21,7 +21,7 @@ See more at http://blog.squix.ch
 #include <Arduino.h>
 
 #include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ILI9341.h> // Hardware-specific library
+#include "ILI9341.h" // Hardware-specific library
 #include <SPI.h>
 // Additional UI functions
 #include "GfxUi.h"
@@ -84,6 +84,12 @@ long lastDownloadUpdate = millis();
 
 void setup() {
   Serial.begin(115200);
+
+  // The LED pin needs to set HIGH
+  // Use this pin to save energy
+  pinMode(LED_PIN, D8);
+  digitalWrite(LED_PIN, HIGH);
+  
   tft.begin();
   tft.fillScreen(ILI9341_BLACK);
   tft.setFont(&ArialRoundedMTBold_14);

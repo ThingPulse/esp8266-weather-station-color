@@ -18,7 +18,7 @@ SOFTWARE.
 See more at http://blog.squix.ch
 */
 
-#include <Adafruit_ILI9341.h>
+#include "ILI9341.h"
 #include <FS.h>
 
 #ifndef _GFX_UI_H

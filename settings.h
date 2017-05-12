@@ -22,8 +22,9 @@ See more at http://blog.squix.ch
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 
 // Pins for the ILI9341
-#define TFT_DC 2
-#define TFT_CS 5
+#define TFT_DC D2
+#define TFT_CS D1
+#define LED_PIN D8
 
 // TimeClient settings
 const float UTC_OFFSET = 2;
