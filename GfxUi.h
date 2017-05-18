@@ -41,6 +41,7 @@ class GfxUi {
     void setTextColor(uint16_t c, uint16_t bg);
     void drawBmp(String filename, uint8_t x, uint16_t y);
     void drawProgressBar(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t percentage, uint16_t frameColor, uint16_t barColor);
+    void copyProgmemToFile(const uint8_t *data, unsigned int image_len, String filename);
 
   private:
     Adafruit_ILI9341 * _tft;

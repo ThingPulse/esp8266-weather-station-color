@@ -216,3 +216,13 @@ uint32_t GfxUi::read32(File &f) {
   ((uint8_t *)&result)[3] = f.read(); // MSB
   return result;
 }
+
+void GfxUi::copyProgmemToFile(const uint8_t *data, unsigned int image_len, String filename) {
+  File f = SPIFFS.open(filename, "w+");
+  for (int i = 0; i < image_len; i++) {
+    uint8_t c = pgm_read_byte(data++);
+    f.write(c);
+  }
+  f.close();
+}
+
