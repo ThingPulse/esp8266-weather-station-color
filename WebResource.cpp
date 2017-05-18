@@ -87,7 +87,7 @@ void WebResource::downloadFile(String url, String filename, ProgressCallback pro
                         }
                         progressCallback(filename, total - len,total);
                     }
-                    delay(1);
+                    yield();
                 }
 
                 Serial.println();
