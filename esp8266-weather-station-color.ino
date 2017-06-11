@@ -322,7 +322,7 @@ String getMeteoconIcon(String iconText) {
   if (iconText == "Q") return "chancerain";
   if (iconText == "W") return "chancesleet";
   if (iconText == "V") return "chancesnow";
-  if (iconText == "S") return "chancetstorms";
+  if (iconText == "S") return "chancestorms";
   if (iconText == "B") return "clear";
   if (iconText == "Y") return "cloudy";
   if (iconText == "F") return "flurries";
