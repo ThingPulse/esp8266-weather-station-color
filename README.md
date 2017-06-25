@@ -24,6 +24,7 @@ You also need to get an API key for the Wunderground data: https://www.wundergro
 ## Wiring
 
 ![Wiring](resources/PlaneSpotterWiring.png)
+
 | Wemos D1 Mini | ILI9341      |
 | ------------- |:-------------:|
 | D4            | T_IRQ         |
