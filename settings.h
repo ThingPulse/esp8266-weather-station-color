@@ -18,34 +18,45 @@ SOFTWARE.
 See more at http://blog.squix.ch
 */
 
+#include <simpleDSTadjust.h>
+
 // Setup
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 
 // Pins for the ILI9341
 #define TFT_DC D2
 #define TFT_CS D1
-#define LED_PIN D8
+#define TFT_LED D8
 
 
-String G_SCRIPT_ID = "AKfycbwdOi6zab7cLU5fEr0AL6KrAMpygUoFHOtSrgnKfccyHHkpZPo";
-#define USE_PM false
 
-// TimeClient settings
-const float UTC_OFFSET = 2;
 
 // Wunderground Settings
+// To check your settings first try them out in your browser:
+// http://api.wunderground.com/api/WUNDERGROUND_API_KEY/conditions/q/WUNDERGROUND_COUNTTRY/WUNDERGROUND_CITY.json
+// e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CH/Zurich.json
+// e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
 const boolean IS_METRIC = true;
 const String WUNDERGRROUND_API_KEY = "808ba87ed77c4501";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
 
-//Thingspeak Settings
-const String THINGSPEAK_CHANNEL_ID = "67284";
-const String THINGSPEAK_API_READ_KEY = "L2VIW20QVNZJBLAK";
+#define UTC_OFFSET + 1
+struct dstRule StartRule = {"CEST", Last, Sun, Mar, 2, 3600}; // Central European Summer Time = UTC/GMT +2 hours
+struct dstRule EndRule = {"CET", Last, Sun, Oct, 2, 0};       // Central European Time = UTC/GMT +1 hour
 
-// List, so that the downloader knows what to fetch
-String wundergroundIcons [] = {"chanceflurries","chancerain","chancesleet","chancesnow","clear","cloudy","flurries","fog","hazy","mostlycloudy","mostlysunny","partlycloudy","partlysunny","rain","sleet","snow","sunny","tstorms","unknown"};
+// Settings for Boston
+// #define UTC_OFFSET -5
+// struct dstRule StartRule = {"EDT", Second, Sun, Mar, 2, 3600}; // Eastern Daylight time = UTC/GMT -4 hours
+// struct dstRule EndRule = {"EST", First, Sun, Nov, 1, 0};       // Eastern Standard time = UTC/GMT -5 hour
+
+// Change for 12 Hour/ 24 hour style clock
+#define STYLE_12HR false
+
+// change for different ntp (time servers)
+#define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
+// #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
 
 /***************************
  * End Settings

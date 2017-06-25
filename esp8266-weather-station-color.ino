@@ -19,29 +19,34 @@ See more at https://blog.squix.org
 */
 
 #include <Arduino.h>
-
 #include <SPI.h>
-#include "MiniGrafx.h"
-#include "Carousel.h"
-#include "ILI9341_SPI.h"
-#include "ArialRounded.h"
-#include "moonphases.h"
-#include "weathericons.h"
-
 #include <ESP8266WiFi.h>
 
+/***
+ * Install the following libraries through Arduino Library Manager
+ * - Mini Grafx by Daniel Eichhorn
+ * - ESP8266 WeatherStation by Daniel Eichhorn
+ * - Json Streaming Parser by Daniel Eichhorn
+ * - simpleDSTadjust by neptune2
+ ***/
 
-#include "settings.h"
 #include <JsonListener.h>
 #include <WundergroundConditions.h>
 #include <WundergroundForecast.h>
 #include <WundergroundAstronomy.h>
-#include <TimeClient.h>
-#include "CalendarParser.h"
+#include <MiniGrafx.h>
+#include <Carousel.h>
+#include <ILI9341_SPI.h>
 
-#define TFT_DC D2
-#define TFT_CS D1
-#define TFT_LED D8
+#include "ArialRounded.h"
+#include "moonphases.h"
+#include "weathericons.h"
+
+/*****************************
+ * Important: see settings.h to configure your settings!!!
+ * ***************************/
+#include "settings.h"
+
 
 #define MINI_BLACK 0
 #define MINI_WHITE 1
@@ -58,25 +63,23 @@ uint16_t palette[] = {ILI9341_BLACK, // 0
 
 int SCREEN_WIDTH = 240;
 int SCREEN_HEIGHT = 320;
+// Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
 // HOSTNAME for OTA update
 #define HOSTNAME "ESP8266-OTA-"
 
-/*****************************
- * Important: see settings.h to configure your settings!!!
- * ***************************/
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
 Carousel carousel(&gfx, 0, 0, 240, 100);
 
-TimeClient timeClient(UTC_OFFSET);
-
-
 WGConditions conditions;
 WGForecast forecasts[MAX_FORECASTS];
 WGAstronomy astronomy;
+
+// Setup simpleDSTadjust Library rules
+simpleDSTadjust dstAdjusted(StartRule, EndRule);
 
 void updateData();
 void drawProgress(uint8_t percentage, String text);
@@ -96,6 +99,8 @@ long lastDownloadUpdate = millis();
 
 void updateCalendar();
 
+String moonAgeImage = "";
+
 void setup() {
   Serial.begin(115200);
 
@@ -112,10 +117,9 @@ void setup() {
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.drawString(120, 160, "Connecting to WiFi");
   gfx.commit();
+  
   carousel.setFrames(frames, frameCount);
-    //WiFiManager
-  Serial.print("Free heap: ");
-  Serial.println(ESP.getFreeHeap());
+  carousel.disableAllIndicators();
 
   //Manual Wifi
   WiFi.begin("yourssid", "yourpassw0rd");
@@ -123,12 +127,9 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println(ESP.getFreeHeap());
-  //calendar.updateCalendar(G_SCRIPT_ID);
-  //updateCalendar();
 
 
-  // load the weather information
+  // update the weather information
   updateData();
 }
 
@@ -137,7 +138,6 @@ void loop() {
   gfx.fillBuffer(MINI_BLACK);
   drawTime();
   drawCurrentWeather();
-  //drawForecast();
   int remainingTimeBudget = carousel.update();
 
   if (remainingTimeBudget > 0) {
@@ -159,58 +159,32 @@ void loop() {
 
 // Update the internet based information and update screen
 void updateData() {
-  Serial.print("Free heap, before bit change: ");
-  Serial.println(ESP.getFreeHeap());
-  gfx.changeBitDepth(1, palette);
-  Serial.print("Free heap, after bit change: ");
-  Serial.println(ESP.getFreeHeap());
+ 
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
-  free(conditions);
-  free(forecasts);
-  free(astronomy);
-  drawProgress(10, "Updating calendar...");
-  /*CalendarParser calendar = new Calendar();
-  calendar->updateCalendar(G_SCRIPT_ID);
-  calendar = nullptr;*/
-  //updateCalendar();
   
-  drawProgress(20, "Updating time...");
-  timeClient.updateTime();
+  drawProgress(10, "Updating time...");
+  configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
   
   drawProgress(50, "Updating conditions...");
-  conditions = (WGConditions *) malloc(sizeof(WGConditions));
-  Serial.println("Allocating");
-  delay(1000);
-  conditions->currentTemp = "hello";
-  Serial.println("Allocated");
-  delay(1000);
   WundergroundConditions *conditionsClient = new WundergroundConditions(IS_METRIC);
-  conditionsClient->updateConditions(conditions, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
+  conditionsClient->updateConditions(&conditions, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete conditionsClient;
   conditionsClient = nullptr;
   
   drawProgress(70, "Updating forecasts...");
-  forecasts = (WGForecast*) malloc(sizeof(WGForecast) * MAX_FORECASTS);
   WundergroundForecast *forecastClient = new WundergroundForecast(IS_METRIC);
   forecastClient->updateForecast(forecasts, MAX_FORECASTS, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete forecastClient;
   forecastClient = nullptr;
   drawProgress(80, "Updating astronomy...");
 
-  astronomy = (WGAstronomy*) malloc(sizeof(WGAstronomy));
-  WundergroundAstronomy *astronomyClient = new WundergroundAstronomy(USE_PM);
-  astronomyClient->updateAstronomy(astronomy, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
+  WundergroundAstronomy *astronomyClient = new WundergroundAstronomy(STYLE_12HR);
+  astronomyClient->updateAstronomy(&astronomy, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete astronomyClient;
   astronomyClient = nullptr;
+  moonAgeImage = String((char) (65 + 26 * (((15 + astronomy.moonAge.toInt()) % 30) / 30.0)));
 
-  drawProgress(100, "Done...");
-  Serial.print("Free heap, before bit change: ");
-  Serial.println(ESP.getFreeHeap());
-  gfx.changeBitDepth(2, palette);
-  
-  Serial.print("Free heap, after bit change: ");
-  Serial.println(ESP.getFreeHeap());
   delay(1000);
 }
 
@@ -226,90 +200,65 @@ void drawProgress(uint8_t percentage, String text) {
   gfx.drawRect(10, 165, 240 - 20, 15);
   gfx.setColor(MINI_BLUE);
   gfx.fillRect(12, 167, 216 * percentage / 100, 11);
-  //ui.drawProgressBar(10, 165, 240 - 20, 15, percentage, ILI9341_WHITE, ILI9341_BLUE);
+
   gfx.commit();
 }
 
 // draws the clock
 void drawTime() {
 
-  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  /*gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
   gfx.setFont(ArialRoundedMTBold_14);
-  String date = conditions->date;
+  String date = conditions.date;
   gfx.drawString(120, 6, date);
   
   gfx.setFont(ArialRoundedMTBold_36);
   String time = timeClient.getHours() + ":" + timeClient.getMinutes() + ":" + timeClient.getSeconds();
-  gfx.drawString(120, 20, time);
-}
-
-void updateCalendar() {
-  Serial.print("Free heap: ");
-  Serial.println(ESP.getFreeHeap());
-  const char* host = "script.google.com";
-  // Replace with your own script id to make server side changes
-  const char *GScriptId = "AKfycbwdOi6zab7cLU5fEr0AL6KrAMpygUoFHOtSrgnKfccyHHkpZPo";
+  gfx.drawString(120, 20, time);*/
+  char *dstAbbrev;
+  char time_str[11];
+  time_t now = dstAdjusted.time(&dstAbbrev);
+  struct tm * timeinfo = localtime (&now);
   
-  const int httpsPort = 443;
-  String url = String("/macros/s/") + GScriptId + "/exec";
-  // echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
-  const char* fingerprint = "08:9E:B2:B8:77:37:3E:85:26:09:CA:29:13:D2:B0:57:26:DE:C4:6D";
+  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  gfx.setFont(ArialRoundedMTBold_14);
+  String date = ctime(&now);
+  date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
+  gfx.drawString(120, 6, date);
   
-   // Use HTTPSRedirect class to create a new TLS connection
-  HTTPSRedirect *client = new HTTPSRedirect(httpsPort);
-  client->setPrintResponseBody(true);
-  client->setContentTypeHeader("application/json");
-  Serial.print("Connecting to ");
-  Serial.println(host);
-
-  // Try to connect for a maximum of 5 times
-  bool flag = false;
-  for (int i=0; i<5; i++){
-    Serial.println(".");
-    delay(1000);
-    int retval = client->connect(host, httpsPort);
-    if (retval == 1) {
-       flag = true;
-       break;
-    }
-    else
-      Serial.println("Connection failed. Retrying...");
-  }
- 
-  if (!flag){
-    Serial.print("Could not connect to server: ");
-    Serial.println(host);
-    Serial.println("Exiting...");
-    return;
-  }
+  gfx.setFont(ArialRoundedMTBold_36);
   
-  if (client->verify(fingerprint, host)) {
-    Serial.println("Certificate match.");
+  if (STYLE_12HR) {
+    int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
+    sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
+    gfx.drawString(120, 20, time_str);
   } else {
-    Serial.println("Certificate mis-match");
+    sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    gfx.drawString(120, 20, time_str);
   }
 
-  // fetch spreadsheet data
-  client->GET(url, host);
-
-
-  delete client;
-  client = nullptr;
+  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
+  gfx.setFont(ArialMT_Plain_10);
+  gfx.setColor(MINI_BLUE);
+  if (STYLE_12HR) {
+    sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour>=12?"PM":"AM");
+    gfx.drawString(195, 27, time_str);
+  } else {
+    sprintf(time_str, "%s", dstAbbrev);
+    gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
+  }
 }
 
 // draws current weather information
 void drawCurrentWeather() {
-  // Weather Icon
-  
   gfx.setTransparentColor(MINI_BLACK);
-  //gfx.drawBmpFromFile(weatherIcon + ".bmp", 0, 55);
-  gfx.drawPalettedBitmapFromPgm(0, 55, getMeteoconIconFromProgmem(conditions->weatherIcon));
+  gfx.drawPalettedBitmapFromPgm(0, 55, getMeteoconIconFromProgmem(conditions.weatherIcon));
   // Weather Text
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_YELLOW);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 76, conditions->weatherText);
+  gfx.drawString(220, 76, conditions.weatherText);
 
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
@@ -318,7 +267,7 @@ void drawCurrentWeather() {
   if (IS_METRIC) {
     degreeSign = "°C";
   }
-  String temp = conditions->currentTemp + degreeSign;
+  String temp = conditions.currentTemp + degreeSign;
   gfx.drawString(220, 89, temp);
 
 }
@@ -328,15 +277,13 @@ void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t 
   drawForecastDetail(x + 95, y + 165, 2);
   drawForecastDetail(x + 180, y + 165, 4);
 }
+
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y) {
   drawForecastDetail(x + 10, y + 165, 6);
   drawForecastDetail(x + 95, y + 165, 8);
   drawForecastDetail(x + 180, y + 165, 10); 
 }
-// draws the three forecast columns
-void drawForecast() {
 
-}
 
 // helper for the forecast columns
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
@@ -351,39 +298,36 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
 
   gfx.drawPalettedBitmapFromPgm(x, y + 15, getMiniMeteoconIconFromProgmem(forecasts[dayIndex].forecastIcon));
+  gfx.setColor(MINI_BLUE);
+  gfx.drawString(x + 25, y + 60, forecasts[dayIndex].PoP + "%");
 }
 
 // draw moonphase and sunrise/set and moonrise/set
 void drawAstronomy() {
-  char moonAgeImage = 65 + 26 * astronomy->moonAge.toInt() / 30.0;
+  
   gfx.setFont(MoonPhases_Regular_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.drawString(120, 270, String(moonAgeImage));
-  //gfx.drawBmpFromFile("/moon" + String(moonAgeImage) + ".bmp", 120 - 30, 255);
+  gfx.drawString(120, 275, moonAgeImage);
   
   gfx.setColor(MINI_WHITE);
   gfx.setFont(ArialRoundedMTBold_14); 
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(120, 245, astronomy->moonPhase); 
+  gfx.drawString(120, 250, astronomy.moonPhase); 
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(10, 245, "Sun");
+  gfx.drawString(5, 250, "Sun");
   gfx.setColor(MINI_WHITE);
-  astronomy->sunriseTime.trim();
-  astronomy->sunriseTime.trim();
-  gfx.drawString(10, 276, astronomy->sunriseTime);
-  gfx.drawString(10, 291, astronomy->sunsetTime);
+  gfx.drawString(5, 276, astronomy.sunriseTime);
+  gfx.drawString(5, 291, astronomy.sunsetTime);
 
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(230, 245, "Moon");
+  gfx.drawString(235, 250, "Moon");
   gfx.setColor(MINI_WHITE);
-  astronomy->moonriseTime.trim();
-  astronomy->moonsetTime.trim();
-  gfx.drawString(230, 276, astronomy->moonriseTime);
-  gfx.drawString(230, 291, astronomy->moonsetTime);
+  gfx.drawString(235, 276, astronomy.moonriseTime);
+  gfx.drawString(235, 291, astronomy.moonsetTime);
   
 }
 
@@ -438,8 +382,4 @@ const char* getMiniMeteoconIconFromProgmem(String iconText) {
   return miniunknown;
 }
 
-// if you want separators, uncomment the tft-line
-void drawSeparator(uint16_t y) {
-   //tft.drawFastHLine(10, y, 240 - 2 * 10, 0x4228);
-}
 
