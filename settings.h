@@ -26,12 +26,16 @@ const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 #define TFT_CS D1
 #define LED_PIN D8
 
+
+String G_SCRIPT_ID = "AKfycbwdOi6zab7cLU5fEr0AL6KrAMpygUoFHOtSrgnKfccyHHkpZPo";
+#define USE_PM false
+
 // TimeClient settings
 const float UTC_OFFSET = 2;
 
 // Wunderground Settings
 const boolean IS_METRIC = true;
-const String WUNDERGRROUND_API_KEY = "<WUNDERGROUND KEY HERE>";
+const String WUNDERGRROUND_API_KEY = "808ba87ed77c4501";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
