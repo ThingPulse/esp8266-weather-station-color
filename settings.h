@@ -36,8 +36,8 @@ const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 // http://api.wunderground.com/api/WUNDERGROUND_API_KEY/conditions/q/WUNDERGROUND_COUNTTRY/WUNDERGROUND_CITY.json
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CH/Zurich.json
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
-const boolean IS_METRIC = true;
-const String WUNDERGRROUND_API_KEY = "808ba87ed77c4501";
+
+const String WUNDERGRROUND_API_KEY = "WUNDERGROUND_API_KEY";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
@@ -50,6 +50,9 @@ struct dstRule EndRule = {"CET", Last, Sun, Oct, 2, 0};       // Central Europea
 // #define UTC_OFFSET -5
 // struct dstRule StartRule = {"EDT", Second, Sun, Mar, 2, 3600}; // Eastern Daylight time = UTC/GMT -4 hours
 // struct dstRule EndRule = {"EST", First, Sun, Nov, 1, 0};       // Eastern Standard time = UTC/GMT -5 hour
+
+// values in metric or imperial system?
+const boolean IS_METRIC = true;
 
 // Change for 12 Hour/ 24 hour style clock
 #define STYLE_12HR false
