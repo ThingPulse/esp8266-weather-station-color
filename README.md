@@ -14,25 +14,29 @@ By buying the kit from me you are supporting future development. Thank you!
 
 
 ## Software Requirements/ Libraries
-
-* Arduino IDE with ESP8266 platform installed
-* [Weather Station Library](https://github.com/squix78/esp8266-weather-station) or through Library Manager
-* [Adafruit ILI9341](https://github.com/adafruit/Adafruit_ILI9341) or through Library Manager
-* [Adafruit GFX](https://github.com/adafruit/Adafruit-GFX-Library) or through Library Manager
-* [WifiManager](https://github.com/tzapu/WiFiManager)
+ * Mini Grafx by Daniel Eichhorn
+ * ESP8266 WeatherStation by Daniel Eichhorn
+ * Json Streaming Parser by Daniel Eichhorn
+ * simpleDSTadjust by neptune2
 
 You also need to get an API key for the Wunderground data: https://www.wunderground.com/
 
 ## Wiring
 
-| ILI9341       | NodeMCU      |
+![Wiring](resources/PlaneSpotterWiring.png)
+| Wemos D1 Mini | ILI9341      |
 | ------------- |:-------------:|
-| MISO          | -             |
-| LED           | 3V3           |
-| SCK           | D5            |
-| MOSI          | D7            |
-| DC/RS         | D4            |
-| RESET         | RST           |
-| CS            | D2            |
+| D4            | T_IRQ         |
+| D6            | T_DO          |
+| D7            | T_DIN         |
+| D3            | T_CS          |
+| D5            | T_CLK         |
+| D6            | SDO           |
+| D8            | LED           |
+| D5            | SCK           |
+| D7            | SDI           |
+| D2            | D/C           |
+| RST           | RESET         |
+| D1            | CS            |
 | GND           | GND           |
-| VCC           | 3V3           |
+| 3V3           | VCC           |
