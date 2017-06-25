@@ -21,6 +21,14 @@ By buying the kit from me you are supporting future development. Thank you!
 
 You also need to get an API key for the Wunderground data: https://www.wunderground.com/
 
+## Settings
+Please have a good look at the settings.h file. There you can:
+ * set your location for the weather information
+ * Set the clock mode: 12hour (am/pm) or 24hour mode
+ * Metric system for temperature
+ * Timezone and daytime saving options
+ * API key for the wunderground service
+
 ## Wiring
 
 ![Wiring](resources/PlaneSpotterWiring.png)
