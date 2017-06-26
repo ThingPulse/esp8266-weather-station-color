@@ -97,8 +97,6 @@ FrameCallback frames[] = { drawForecast1, drawForecast2 };
 int frameCount = 2;
 long lastDownloadUpdate = millis();
 
-void updateCalendar();
-
 String moonAgeImage = "";
 
 void setup() {
@@ -128,7 +126,6 @@ void setup() {
     Serial.print(".");
   }
 
-
   // update the weather information
   updateData();
 }
@@ -148,7 +145,6 @@ void loop() {
   }
   drawAstronomy();
   gfx.commit();
-
 
   // Check if we should update weather information
   if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
@@ -188,11 +184,15 @@ void updateData() {
   delay(1000);
 }
 
+
 // Progress bar helper
 void drawProgress(uint8_t percentage, String text) {
   gfx.fillBuffer(MINI_BLACK);
+  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo); 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  gfx.setColor(MINI_WHITE);
+  gfx.drawString(120, 80, "https://blog.squix.org");
   gfx.setColor(MINI_YELLOW);
 
   gfx.drawString(120, 146, text);
@@ -207,15 +207,6 @@ void drawProgress(uint8_t percentage, String text) {
 // draws the clock
 void drawTime() {
 
-  /*gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.setColor(MINI_WHITE);
-  gfx.setFont(ArialRoundedMTBold_14);
-  String date = conditions.date;
-  gfx.drawString(120, 6, date);
-  
-  gfx.setFont(ArialRoundedMTBold_36);
-  String time = timeClient.getHours() + ":" + timeClient.getMinutes() + ":" + timeClient.getSeconds();
-  gfx.drawString(120, 20, time);*/
   char *dstAbbrev;
   char time_str[11];
   time_t now = dstAdjusted.time(&dstAbbrev);
@@ -339,7 +330,7 @@ const char* getMeteoconIconFromProgmem(String iconText) {
   if (iconText == "chancesleet") return chancesleet;
   if (iconText == "chancesnow") return chancesnow;
   if (iconText == "chancetstorms") return chancestorms;
-  if (iconText == "cloudy") return clear;
+  if (iconText == "clear") return clear;
   if (iconText == "cloudy") return cloudy;
   if (iconText == "flurries") return flurries;
   if (iconText == "fog") return fog;
