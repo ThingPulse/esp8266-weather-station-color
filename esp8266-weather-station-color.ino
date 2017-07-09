@@ -72,8 +72,9 @@ int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
 ADC_MODE(ADC_VCC);
 
-// HOSTNAME for OTA update
-#define HOSTNAME "ESP8266-OTA-"
+#include "ArialRounded.h"
+#include "moonphases.h"
+#include "weathericons.h"
 
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
@@ -152,14 +153,14 @@ void setup() {
     }
     touchController.saveCalibration();
   }
-  
+
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_YELLOW);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.drawString(120, 160, "Connecting to WiFi");
   gfx.commit();
-  
+
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
 
@@ -185,7 +186,7 @@ void loop() {
       screen = (screen + 1) % screenCount;
     }
   }
-  
+
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
     drawTime();
@@ -209,9 +210,9 @@ void loop() {
   }
   gfx.commit();
 
-  
 
-  
+
+
   // Check if we should update weather information
   if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
       updateData();
@@ -221,25 +222,25 @@ void loop() {
 
 // Update the internet based information and update screen
 void updateData() {
- 
+
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
-  
+
   drawProgress(10, "Updating time...");
   configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
-  
+
   drawProgress(50, "Updating conditions...");
   WundergroundConditions *conditionsClient = new WundergroundConditions(IS_METRIC);
   conditionsClient->updateConditions(&conditions, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete conditionsClient;
   conditionsClient = nullptr;
-  
+
   drawProgress(70, "Updating forecasts...");
   WundergroundForecast *forecastClient = new WundergroundForecast(IS_METRIC);
   forecastClient->updateForecast(forecasts, MAX_FORECASTS, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete forecastClient;
   forecastClient = nullptr;
-  
+
   drawProgress(80, "Updating astronomy...");
   WundergroundAstronomy *astronomyClient = new WundergroundAstronomy(IS_STYLE_12HR);
   astronomyClient->updateAstronomy(&astronomy, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
@@ -252,7 +253,7 @@ void updateData() {
   alertClient->updateAlerts(alerts, MAX_ALERTS, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete alertClient;
   alertClient = nullptr;
-  
+
 
   delay(1000);
 }
@@ -261,7 +262,7 @@ void updateData() {
 // Progress bar helper
 void drawProgress(uint8_t percentage, String text) {
   gfx.fillBuffer(MINI_BLACK);
-  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo); 
+  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
@@ -284,16 +285,16 @@ void drawTime() {
   char time_str[11];
   time_t now = dstAdjusted.time(&dstAbbrev);
   struct tm * timeinfo = localtime (&now);
-  
+
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_WHITE);
   String date = ctime(&now);
   date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
   gfx.drawString(120, 6, date);
-  
+
   gfx.setFont(ArialRoundedMTBold_36);
-  
+
   if (IS_STYLE_12HR) {
     int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
     sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
@@ -352,7 +353,7 @@ void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t 
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y) {
   drawForecastDetail(x + 10, y + 165, 6);
   drawForecastDetail(x + 95, y + 165, 8);
-  drawForecastDetail(x + 180, y + 165, 10); 
+  drawForecastDetail(x + 180, y + 165, 10);
 }
 
 
@@ -375,17 +376,17 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
 
 // draw moonphase and sunrise/set and moonrise/set
 void drawAstronomy() {
-  
+
   gfx.setFont(MoonPhases_Regular_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.drawString(120, 275, moonAgeImage);
-  
+
   gfx.setColor(MINI_WHITE);
-  gfx.setFont(ArialRoundedMTBold_14); 
+  gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(120, 250, astronomy.moonPhase); 
+  gfx.drawString(120, 250, astronomy.moonPhase);
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(5, 250, "Sun");
@@ -399,11 +400,11 @@ void drawAstronomy() {
   gfx.setColor(MINI_WHITE);
   gfx.drawString(235, 276, astronomy.moonriseTime);
   gfx.drawString(235, 291, astronomy.moonsetTime);
-  
+
 }
 
 void drawAlert() {
-  
+
 }
 
 void drawCurrentWeatherDetail() {
@@ -464,10 +465,10 @@ void drawForecastTable(uint8_t start) {
       break;
     }
     gfx.drawPalettedBitmapFromPgm(0, y, getMiniMeteoconIconFromProgmem(forecasts[i].forecastIcon));
-    
+
     gfx.setColor(MINI_YELLOW);
     gfx.setFont(ArialRoundedMTBold_14);
-    
+
     gfx.drawString(50, y, forecasts[i].forecastTitle);
     gfx.setColor(MINI_WHITE);
     gfx.drawString(50, y + 15, getShortText(forecasts[i].forecastIcon));
@@ -483,23 +484,23 @@ void drawForecastTable(uint8_t start) {
     gfx.drawString(235, y, temp + degreeSign);
     /*gfx.setColor(MINI_WHITE);
     gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
-  
+
     gfx.drawPalettedBitmapFromPgm(x, y + 15, getMiniMeteoconIconFromProgmem(forecasts[dayIndex].forecastIcon));*/
     gfx.setColor(MINI_BLUE);
     gfx.drawString(235, y + 15, forecasts[i].PoP + "%");
-      
+
   }
 }
 
 void drawAbout() {
   gfx.fillBuffer(MINI_BLACK);
-  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo); 
+  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo);
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
   gfx.drawString(120, 80, "https://blog.squix.org");
-  
+
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
@@ -519,7 +520,7 @@ void calibrationCallback(int16_t x, int16_t y) {
 
 // Helper function, should be part of the weather station library and should disappear soon
 const char* getMeteoconIconFromProgmem(String iconText) {
-  
+
   if (iconText == "chanceflurries") return chanceflurries;
   if (iconText == "chancerain") return chancerain;
   if (iconText == "chancesleet") return chancesleet;
@@ -563,13 +564,13 @@ const char* getMiniMeteoconIconFromProgmem(String iconText) {
   if (iconText == "snow") return minisnow;
   if (iconText == "sunny") return minisunny;
   if (iconText == "tstorms") return minitstorms;
-  
+
 
   return miniunknown;
 }
 // Helper function, should be part of the weather station library and should disappear soon
 const String getShortText(String iconText) {
-  
+
   if (iconText == "chanceflurries") return "Chance of Flurries";
   if (iconText == "chancerain") return "Chance of Rain";
   if (iconText == "chancesleet") return "Chance of Sleet";
@@ -589,9 +590,7 @@ const String getShortText(String iconText) {
   if (iconText == "snow") return "Snow";
   if (iconText == "sunny") return "Sunny";
   if (iconText == "tstorms") return "Storms";
-  
+
 
   return "-";
 }
-
-
