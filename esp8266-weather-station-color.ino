@@ -429,6 +429,7 @@ void drawCurrentWeatherDetail() {
   drawLabelValue(6, "Pressure:", conditions.pressure);
   drawLabelValue(7, "Precipitation:", conditions.precipitationToday);
   drawLabelValue(8, "UV:", conditions.UV);
+
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(15, 185, "Description: ");
@@ -501,14 +502,18 @@ void drawAbout() {
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  drawLabelValue(7, "Heap Mem:", String(ESP.getFreeHeap() / 1024)+"kb");
+  drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
+  drawLabelValue(9, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
+  drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
+  drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
+  drawLabelValue(12, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
+  drawLabelValue(13, "Uptime: ", String(millis() / 1000) + "s");
+  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
+  gfx.setColor(MINI_YELLOW);
+  gfx.drawString(15, 250, "Last Reset: ");
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 115, "About");
-  drawLabelValue(8, "Heap Mem:", String(ESP.getFreeHeap() / 1024)+"kb");
-  drawLabelValue(9, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
-  drawLabelValue(10, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
-  drawLabelValue(11, "Chip ID:", String(ESP.getChipId()));
-  drawLabelValue(12, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
-  drawLabelValue(13, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
+  gfx.drawStringMaxWidth(15, 265, 240 - 2 * 15, ESP.getResetInfo());
 }
 
 void calibrationCallback(int16_t x, int16_t y) {
