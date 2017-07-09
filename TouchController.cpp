@@ -29,7 +29,7 @@ bool TouchController::loadCalibration() {
 
   }
   f.close();
-  
+
 }
 
 bool TouchController::saveCalibration() {
@@ -68,7 +68,7 @@ void TouchController::continueCalibration() {
     } else if (state == 1) {
       (*calibrationCallback)(230, 310);
       if (touchScreen->touched() && (millis() - lastStateChange > 1000)) {
-        
+
         p2 = p;
         state++;
         lastStateChange = millis();
@@ -103,4 +103,3 @@ TS_Point TouchController::getPoint() {
     p.y = y;
     return p;
 }
-

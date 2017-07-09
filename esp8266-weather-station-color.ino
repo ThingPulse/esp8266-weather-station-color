@@ -49,7 +49,7 @@ See more at https://blog.squix.org
  * Important: see settings.h to configure your settings!!!
  * ***************************/
 #include "settings.h"
-
+ 
 
 #define MINI_BLACK 0
 #define MINI_WHITE 1
