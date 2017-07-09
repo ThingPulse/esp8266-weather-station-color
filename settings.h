@@ -28,7 +28,9 @@ const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 #define TFT_CS D1
 #define TFT_LED D8
 
-
+// touch screen pins
+#define TOUCH_CS D3
+#define TOUCH_IRQ  D4
 
 
 // Wunderground Settings
@@ -37,7 +39,8 @@ const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CH/Zurich.json
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
 
-const String WUNDERGRROUND_API_KEY = "WUNDERGROUND_API_KEY";
+const String DISPLAYED_CITY_NAME = "Zürich";
+const String WUNDERGRROUND_API_KEY = "808ba87ed77c4501";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
@@ -52,10 +55,10 @@ struct dstRule EndRule = {"CET", Last, Sun, Oct, 2, 0};       // Central Europea
 // struct dstRule EndRule = {"EST", First, Sun, Nov, 1, 0};       // Eastern Standard time = UTC/GMT -5 hour
 
 // values in metric or imperial system?
-const boolean IS_METRIC = true;
+bool IS_METRIC = true;
 
 // Change for 12 Hour/ 24 hour style clock
-#define STYLE_12HR false
+bool IS_STYLE_12HR = false;
 
 // change for different ntp (time servers)
 #define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
