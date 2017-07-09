@@ -41,6 +41,7 @@ See more at https://blog.squix.org
 #include <Carousel.h>
 #include <ILI9341_SPI.h>
 
+
 #include "ArialRounded.h"
 #include "moonphases.h"
 #include "weathericons.h"
@@ -72,9 +73,6 @@ int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
 ADC_MODE(ADC_VCC);
 
-#include "ArialRounded.h"
-#include "moonphases.h"
-#include "weathericons.h"
 
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
