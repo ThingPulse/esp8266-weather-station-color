@@ -17,7 +17,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 See more at https://blog.squix.org
 */
- 
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
@@ -50,7 +50,7 @@ See more at https://blog.squix.org
  * Important: see settings.h to configure your settings!!!
  * ***************************/
 #include "settings.h"
- 
+
 
 #define MINI_BLACK 0
 #define MINI_WHITE 1
@@ -163,7 +163,7 @@ void setup() {
   carousel.disableAllIndicators();
 
   //Manual Wifi
-  WiFi.begin("yourssid", "yourpassw0rd");
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -551,7 +551,7 @@ const char* getMeteoconIconFromProgmem(String iconText) {
   if (iconText == "snow") return snow;
   if (iconText == "sunny") return sunny;
   if (iconText == "tstorms") return tstorms;
-  
+
 
   return unknown;
 }
