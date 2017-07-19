@@ -21,17 +21,44 @@ See more at http://blog.squix.ch
 #include <simpleDSTadjust.h>
 
 // Setup
+#define WIFI_SSID "TP-LINK_AA0301"
+#define WIFI_PASS "13777060301"
+
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
+const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
 
-// Pins for the ILI9341
-#define TFT_DC D2
-#define TFT_CS D1
-#define TFT_LED D8
+#define SQUIX         10
+#define AZSMZ_1_1     11
 
-// touch screen pins
-#define TOUCH_CS D3
-#define TOUCH_IRQ  D4
+//#define BOARD SQUIX
+#define BOARD AZSMZ_1_1
 
+#if BOARD == SQUIX
+  // Pins for the ILI9341
+  #define TFT_DC D2
+  #define TFT_CS D1
+  #define TFT_LED D8
+  
+  #define HAVE_TOUCHPAD
+  #define TOUCH_CS D3
+  #define TOUCH_IRQ  D4
+    
+#elif BOARD == AZSMZ_1_1
+  #define TFT_DC 5
+  #define TFT_CS 4
+  #define TFT_LED 16
+  #define TFT_LED_LOW       // set LOW to Turn on;
+
+  #define BTN_1 0
+
+  #define LM75
+  #define SDA_PIN 0
+  #define SCL_PIN 2  
+  // LM75A Address
+  #define Addr 0x48  
+  #define BATT
+
+#endif
 
 // Wunderground Settings
 // To check your settings first try them out in your browser:
@@ -67,3 +94,4 @@ bool IS_STYLE_12HR = false;
 /***************************
  * End Settings
  **************************/
+
