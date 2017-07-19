@@ -6,7 +6,7 @@ ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
 
 This code is made for an 240x320 65K ILI9341 display with code running on an ESP8266.
 
-[![AZSMZ TFT](resources/AZSMZ-A.jpg)]
+[![AZSMZ TFT](resources/AZSMZ-11.jpg)]
 
 
 
