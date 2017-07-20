@@ -443,9 +443,9 @@ void drawCurrentWeather() {
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  String degreeSign = "буF";
+  String degreeSign = "°F";
   if (IS_METRIC) {
-    degreeSign = "буC";
+    degreeSign = "°C";
   }
 
   #ifdef LM75
@@ -536,9 +536,9 @@ void drawCurrentWeatherDetail() {
   //gfx.setTransparentColor(MINI_BLACK);
   //gfx.drawPalettedBitmapFromPgm(0, 20, getMeteoconIconFromProgmem(conditions.weatherIcon));
 
-  String degreeSign = "буF";
+  String degreeSign = "°F";
   if (IS_METRIC) {
-    degreeSign = "буC";
+    degreeSign = "°C";
   }
   // String weatherIcon;
   // String weatherText;
@@ -674,9 +674,6 @@ void drawAbout() {
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
   
   #ifdef BATT
-    float power = analogRead(A0) * 49 / 10240.0;
-    int perc = 100;
-    if (power > 4.1) perc = 100;
     drawLabelValue(11, "Battery: ", String(analogRead(A0) * 49 / 10240.0) +"V");
   #else
     drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
