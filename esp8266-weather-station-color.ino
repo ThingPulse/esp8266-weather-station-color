@@ -619,9 +619,9 @@ void drawForecastTable(uint8_t start) {
   gfx.drawString(120, 2, "Forecasts");
   uint16_t y = 0;
 
-  String degreeSign = "буF";
+  String degreeSign = "°F";
   if (IS_METRIC) {
-    degreeSign = "буC";
+    degreeSign = "°C";
   }
   for (uint8_t i = start; i < start + 6; i++) {
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
