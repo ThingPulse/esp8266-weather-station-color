@@ -60,8 +60,6 @@ See more at https://blog.squix.org
 #define MINI_YELLOW 2
 #define MINI_BLUE 3
 
-//ILI9341_RED
-
 #define MAX_FORECASTS 12
 #define MAX_ALERTS 1
 
