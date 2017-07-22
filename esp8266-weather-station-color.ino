@@ -312,10 +312,6 @@ void loop() {
       lastDownloadUpdate = millis();
   }
 
-  if (screen >0 && millis() - timerPress >= 10000){ // after 2 minutes go to sleep
-    screen = 0;
-  }
-
   if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
     drawProgress(25,"Going to Sleep!");
     delay(1000);
