@@ -60,6 +60,7 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 
 #endif
 
+
 // Wunderground Settings
 // To check your settings first try them out in your browser:
 // http://api.wunderground.com/api/WUNDERGROUND_API_KEY/conditions/q/WUNDERGROUND_COUNTTRY/WUNDERGROUND_CITY.json
@@ -67,7 +68,7 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
 
 const String DISPLAYED_CITY_NAME = "Zürich";
-const String WUNDERGRROUND_API_KEY = "<WUNDERGROUND KEY>";
+const String WUNDERGRROUND_API_KEY = "WUNDERGROUND_API_KEY";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
