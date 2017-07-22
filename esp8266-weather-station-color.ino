@@ -18,13 +18,19 @@ SOFTWARE.
 See more at https://blog.squix.org
 */
 
+
+/*****************************
+ * Important: see settings.h to configure your settings!!!
+ * ***************************/
+#include "settings.h"
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
 
 #ifdef HAVE_TOUCHPAD
   #include <XPT2046_Touchscreen.h>
-  #include "TouchController.h"
+  #include "TouchControllerWS.h"
 #endif 
 
 /***
@@ -49,10 +55,7 @@ See more at https://blog.squix.org
 #include "moonphases.h"
 #include "weathericons.h"
 
-/*****************************
- * Important: see settings.h to configure your settings!!!
- * ***************************/
-#include "settings.h"
+
 
 
 #define MINI_BLACK 0
@@ -85,7 +88,7 @@ Carousel carousel(&gfx, 0, 0, 240, 100);
 
 #ifdef HAVE_TOUCHPAD
   XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
-  TouchController touchController(&ts);
+  TouchControllerWS touchController(&ts);
 
   void calibrationCallback(int16_t x, int16_t y);
   CalibrationCallback calibration = &calibrationCallback;

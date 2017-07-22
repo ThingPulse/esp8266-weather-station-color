@@ -1,10 +1,10 @@
-#include "TouchController.h"
+#include "TouchControllerWS.h"
 
-TouchController::TouchController(XPT2046_Touchscreen *touchScreen) {
+TouchControllerWS::TouchControllerWS(XPT2046_Touchscreen *touchScreen) {
   this->touchScreen = touchScreen;
 }
-
-bool TouchController::loadCalibration() {
+  
+bool TouchControllerWS::loadCalibration() {
   // always use this to "mount" the filesystem
   bool result = SPIFFS.begin();
   Serial.println("SPIFFS opened: " + result);
@@ -32,7 +32,7 @@ bool TouchController::loadCalibration() {
 
 }
 
-bool TouchController::saveCalibration() {
+bool TouchControllerWS::saveCalibration() {
   bool result = SPIFFS.begin();
 
   // open the file in write mode
@@ -49,12 +49,12 @@ bool TouchController::saveCalibration() {
   f.close();
 }
 
-void TouchController::startCalibration(CalibrationCallback *calibrationCallback) {
+void TouchControllerWS::startCalibration(CalibrationCallback *calibrationCallback) {
   state = 0;
   this->calibrationCallback = calibrationCallback;
 }
 
-void TouchController::continueCalibration() {
+void TouchControllerWS::continueCalibration() {
     TS_Point p = touchScreen->getPoint();
 
     if (state == 0) {
@@ -80,22 +80,22 @@ void TouchController::continueCalibration() {
 
     }
 }
-bool TouchController::isCalibrationFinished() {
+bool TouchControllerWS::isCalibrationFinished() {
   return state == 2;
 }
 
-bool TouchController::isTouched() {
+bool TouchControllerWS::isTouched() {
   touchScreen->touched();
 }
 
-bool TouchController::isTouched(int16_t debounceMillis) {
+bool TouchControllerWS::isTouched(int16_t debounceMillis) {
   if (touchScreen->touched() && millis() - lastTouched > debounceMillis) {
     lastTouched = millis();
     return true;
   }
   return false;
 }
-TS_Point TouchController::getPoint() {
+TS_Point TouchControllerWS::getPoint() {
     TS_Point p = touchScreen->getPoint();
     int x = (p.y - ax) * dx;
     int y = 320 - (p.x - ay) * dy;

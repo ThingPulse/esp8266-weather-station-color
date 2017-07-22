@@ -1,14 +1,14 @@
 #include <FS.h>
 #include <XPT2046_Touchscreen.h>
 
-#ifndef _TOUCH_CONTROLLERH_
-#define _TOUCH_CONTROLLERH_
+#ifndef _TOUCH_CONTROLLERWSH_
+#define _TOUCH_CONTROLLERWSH_
 
 typedef void (*CalibrationCallback)(int16_t x, int16_t y);
 
-class TouchController {
+class TouchControllerWS {
   public:
-    TouchController(XPT2046_Touchscreen *touchScreen);
+    TouchControllerWS(XPT2046_Touchscreen *touchScreen);
     bool loadCalibration();
     bool saveCalibration();
     void startCalibration(CalibrationCallback *callback);
