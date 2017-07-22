@@ -45,7 +45,6 @@ See more at https://blog.squix.org
 #include <WundergroundConditions.h>
 #include <WundergroundForecast.h>
 #include <WundergroundAstronomy.h>
-#include <WundergroundAlerts.h>
 #include <MiniGrafx.h>
 #include <Carousel.h>
 #include <ILI9341_SPI.h>
@@ -64,7 +63,6 @@ See more at https://blog.squix.org
 #define MINI_BLUE 3
 
 #define MAX_FORECASTS 12
-#define MAX_ALERTS 1
 
 // defines the colors usable in the paletted 16 color frame buffer
 uint16_t palette[] = {ILI9341_BLACK, // 0
@@ -98,7 +96,6 @@ Carousel carousel(&gfx, 0, 0, 240, 100);
 WGConditions conditions;
 WGForecast forecasts[MAX_FORECASTS];
 WGAstronomy astronomy;
-WGAlert alerts[MAX_ALERTS];
 
 // Setup simpleDSTadjust Library rules
 simpleDSTadjust dstAdjusted(StartRule, EndRule);
@@ -110,7 +107,6 @@ void drawCurrentWeather();
 void drawForecast();
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
 void drawAstronomy();
-void drawAlert();
 void drawCurrentWeatherDetail();
 void drawLabelValue(uint8_t line, String label, String value);
 void drawForecastTable(uint8_t start);
@@ -354,12 +350,6 @@ void updateData() {
   astronomyClient = nullptr;
   moonAgeImage = String((char) (65 + 26 * (((15 + astronomy.moonAge.toInt()) % 30) / 30.0)));
 
-  drawProgress(90, "Updating alerts...");
-  WundergroundAlerts *alertClient = new WundergroundAlerts();
-  alertClient->updateAlerts(alerts, MAX_ALERTS, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
-  delete alertClient;
-  alertClient = nullptr;
-
   WiFi.mode(WIFI_OFF);
   delay(1000);
 }
@@ -517,10 +507,6 @@ void drawAstronomy() {
   gfx.setColor(MINI_WHITE);
   gfx.drawString(235, 276, astronomy.moonriseTime);
   gfx.drawString(235, 291, astronomy.moonsetTime);
-
-}
-
-void drawAlert() {
 
 }
 
