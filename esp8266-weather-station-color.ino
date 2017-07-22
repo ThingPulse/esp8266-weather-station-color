@@ -21,8 +21,11 @@ See more at https://blog.squix.org
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
-#include <XPT2046_Touchscreen.h>
-#include "TouchController.h"
+
+#ifdef HAVE_TOUCHPAD
+  #include <XPT2046_Touchscreen.h>
+  #include "TouchController.h"
+#endif 
 
 /***
  * Install the following libraries through Arduino Library Manager
@@ -64,23 +67,30 @@ See more at https://blog.squix.org
 uint16_t palette[] = {ILI9341_BLACK, // 0
                       ILI9341_WHITE, // 1
                       ILI9341_YELLOW, // 2
-                      0x7E3C/*ILI9341_BLUE*/}; //3
+                      0x7E3C
+                      }; //3
 
 int SCREEN_WIDTH = 240;
 int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
-ADC_MODE(ADC_VCC);
-
-
+#ifndef BATT
+  ADC_MODE(ADC_VCC);
+#endif
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
 Carousel carousel(&gfx, 0, 0, 240, 100);
 
-XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
-TouchController touchController(&ts);
+#ifdef HAVE_TOUCHPAD
+  XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
+  TouchController touchController(&ts);
+
+  void calibrationCallback(int16_t x, int16_t y);
+  CalibrationCallback calibration = &calibrationCallback;
+  
+#endif 
 
 WGConditions conditions;
 WGForecast forecasts[MAX_FORECASTS];
@@ -108,8 +118,6 @@ const char* getMiniMeteoconIconFromProgmem(String iconText);
 void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 FrameCallback frames[] = { drawForecast1, drawForecast2 };
-void calibrationCallback(int16_t x, int16_t y);
-CalibrationCallback calibration = &calibrationCallback;
 int frameCount = 2;
 
 // how many different screens do we have?
@@ -118,6 +126,22 @@ long lastDownloadUpdate = millis();
 
 String moonAgeImage = "";
 uint16_t screen = 0;
+long timerPress;
+bool canBtnPress;
+
+void connectWifi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+  //Manual Wifi
+  WiFi.begin(WIFI_SSID,WIFI_PASS);
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    if (i>80) i=0;
+    drawProgress(i,"Connecting to WiFi");
+    i+=10;
+    Serial.print(".");
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -125,15 +149,21 @@ void setup() {
   // The LED pin needs to set HIGH
   // Use this pin to save energy
   // Turn on the background LED
+  Serial.println(TFT_LED);
   pinMode(TFT_LED, OUTPUT);
-  digitalWrite(TFT_LED, HIGH);
 
+  #ifdef TFT_LED_LOW
+    digitalWrite(TFT_LED, LOW);    // LOW to Turn on;
+  #else
+    digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
+  #endif
+  
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
+#ifdef HAVE_TOUCHPAD 
   ts.begin();
-
   SPIFFS.begin();
   //SPIFFS.remove("/calibration.txt");
   boolean isCalibrationAvailable = touchController.loadCalibration();
@@ -151,31 +181,74 @@ void setup() {
     }
     touchController.saveCalibration();
   }
-
-  gfx.fillBuffer(MINI_BLACK);
-  gfx.setFont(ArialRoundedMTBold_14);
-  gfx.setColor(MINI_YELLOW);
-  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.drawString(120, 160, "Connecting to WiFi");
-  gfx.commit();
+#endif  
 
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
 
-  //Manual Wifi
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-
   // update the weather information
   updateData();
+  timerPress = millis();
+  canBtnPress = true;
 }
 
 long lastDrew = 0;
+bool btnClick;
+
+#ifdef LM75
+  #include <Wire.h>
+  float temperature = 0.0;
+
+  float lm75() {
+    unsigned int data[2];
+
+    Wire.begin(SDA_PIN,SCL_PIN);
+    Wire.setClock(700000);
+  
+    // Start I2C Transmission
+    Wire.beginTransmission(Addr);
+    // Select temperature data register
+    Wire.write(0x00);
+    // Stop I2C Transmission
+    Wire.endTransmission();
+  
+    // Request 2 bytes of data
+    Wire.requestFrom(Addr,2);
+
+    // Read 2 bytes of data
+    // temp msb, temp lsb
+    if(Wire.available()==2)
+    {
+      data[0] = Wire.read();
+      data[1] = Wire.read();
+    } 
+    //  Serial.println(data[0]);  
+    //  Serial.println(data[1]);
+    
+    // Convert the data to 9-bits
+    int temp = (data[0] * 256 + (data[1] & 0x80)) / 128;
+    if (temp > 255){
+      temp -= 512;
+    }
+    float cTemp = temp * 0.5;
+    float fTemp = cTemp * 1.8 + 32;
+  
+    // Output data to serial monitor
+    //  Serial.print("Temperature in Celsius:  ");
+    //  Serial.print(cTemp);
+    //  Serial.println(" C");
+    //  Serial.print("Temperature in Fahrenheit:  ");
+    //  Serial.print(fTemp);
+    //  Serial.println(" F");  
+    if (IS_METRIC) 
+      return cTemp; 
+    else
+      return fTemp;    
+  }
+#endif
+
 void loop() {
+#ifdef HAVE_TOUCHPAD
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     if (p.y < 80) {
@@ -184,6 +257,28 @@ void loop() {
       screen = (screen + 1) % screenCount;
     }
   }
+#else
+  pinMode(BTN_1, INPUT_PULLUP);
+  delay(5);
+  int btnState = digitalRead(BTN_1);
+  
+  if (btnState == LOW){
+    if(canBtnPress){
+      timerPress = millis();
+      canBtnPress = false;
+    } else {
+        if ((!btnClick) && ((millis() - timerPress)>1000)) {
+          btnClick = true;
+        } 
+    }
+  }else if(!canBtnPress){
+    canBtnPress = true;
+    btnClick = false;
+    if ((millis() - timerPress)<800) {
+        screen = (screen + 1) % screenCount;        
+    }
+  } 
+#endif  
 
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
@@ -208,19 +303,33 @@ void loop() {
   }
   gfx.commit();
 
-
-
-
   // Check if we should update weather information
   if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
       updateData();
       lastDownloadUpdate = millis();
   }
+
+  if (screen >0 && millis() - timerPress >= 10000){ // after 2 minutes go to sleep
+    screen = 0;
+  }
+
+  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
+    drawProgress(25,"Going to Sleep!");
+    delay(1000);
+    drawProgress(50,"Going to Sleep!");
+    delay(1000);
+    drawProgress(75,"Going to Sleep!");
+    delay(1000);    
+    drawProgress(100,"Going to Sleep!");
+    // go to deepsleep for xx minutes or 0 = permanently
+    ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
+  }  
 }
 
 // Update the internet based information and update screen
 void updateData() {
-
+  WiFi.mode(WIFI_STA);
+  connectWifi();
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
 
@@ -252,10 +361,9 @@ void updateData() {
   delete alertClient;
   alertClient = nullptr;
 
-
+  WiFi.mode(WIFI_OFF);
   delay(1000);
 }
-
 
 // Progress bar helper
 void drawProgress(uint8_t percentage, String text) {
@@ -269,9 +377,9 @@ void drawProgress(uint8_t percentage, String text) {
 
   gfx.drawString(120, 146, text);
   gfx.setColor(MINI_WHITE);
-  gfx.drawRect(10, 165, 240 - 20, 15);
+  gfx.drawRect(10, 168, 240 - 20, 15);
   gfx.setColor(MINI_BLUE);
-  gfx.fillRect(12, 167, 216 * percentage / 100, 11);
+  gfx.fillRect(12, 170, 216 * percentage / 100, 11);
 
   gfx.commit();
 }
@@ -312,6 +420,11 @@ void drawTime() {
     sprintf(time_str, "%s", dstAbbrev);
     gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
   }
+
+  drawWifiQuality();
+  #ifdef BATT
+    drawBattery();
+  #endif 
 }
 
 // draws current weather information
@@ -332,7 +445,14 @@ void drawCurrentWeather() {
   if (IS_METRIC) {
     degreeSign = "°C";
   }
-  String temp = conditions.currentTemp + degreeSign;
+
+  #ifdef LM75
+    if (canBtnPress) temperature = lm75(); 
+    String temp = temperature + degreeSign;
+  #else
+    String temp = conditions.currentTemp + degreeSign;
+  #endif
+      
   gfx.drawString(220, 78, temp);
 
   gfx.setFont(ArialRoundedMTBold_14);
@@ -446,6 +566,50 @@ void drawLabelValue(uint8_t line, String label, String value) {
   gfx.setColor(MINI_WHITE);
   gfx.drawString(valueX, 30 + line * 15, value);
 }
+
+// converts the dBm to a range between 0 and 100%
+int8_t getWifiQuality() {
+  int32_t dbm = WiFi.RSSI();
+  if(dbm <= -100) {
+      return 0;
+  } else if(dbm >= -50) {
+      return 100;
+  } else {
+      return 2 * (dbm + 100);
+  }
+}
+
+void drawWifiQuality() {
+  int8_t quality = getWifiQuality();
+  gfx.setColor(MINI_WHITE);
+  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);  
+  gfx.drawString(228, 9, String(quality) + "%");
+  for (int8_t i = 0; i < 4; i++) {
+    for (int8_t j = 0; j < 2 * (i + 1); j++) {
+      if (quality > i * 25 || j == 0) {
+        gfx.setPixel(230 + 2 * i, 18 - j);
+      }
+    }
+  }
+}
+
+void drawBattery() {
+  uint8_t percentage = 100;
+  float power = analogRead(A0) * 49 / 10240.0;
+  if (power > 4.15) percentage = 100;
+  else if (power < 3.7) percentage = 0;
+  else percentage = (power - 3.7) * 100 / (4.15-3.7);
+  
+  gfx.setColor(MINI_WHITE);
+  gfx.setTextAlignment(TEXT_ALIGN_LEFT);  
+  gfx.drawString(26, 9, String(percentage) + "%");
+  gfx.drawRect(1, 11, 18, 9);
+  gfx.drawLine(21,13,21,17);  
+  gfx.drawLine(22,13,22,17);  
+  gfx.setColor(MINI_BLUE); 
+  gfx.fillRect(3, 13, 15 * percentage / 100, 5);
+}
+
 void drawForecastTable(uint8_t start) {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -506,7 +670,13 @@ void drawAbout() {
   drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
   drawLabelValue(9, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
-  drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
+  
+  #ifdef BATT
+    drawLabelValue(11, "Battery: ", String(analogRead(A0) * 49 / 10240.0) +"V");
+  #else
+    drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
+  #endif     
+  
   drawLabelValue(12, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
   char time_str[15];
   const uint32_t millis_in_day = 1000 * 60 * 60 * 24;
@@ -605,3 +775,4 @@ const String getShortText(String iconText) {
 
   return "-";
 }
+
