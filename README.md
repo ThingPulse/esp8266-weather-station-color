@@ -15,7 +15,8 @@ By buying the kit from me you are supporting future development. Thank you!
 
 2. AZSMZ TFT
 
-![AZSMZ TFT](resources/AZSMZ-11.jpg)
+cxandy created a nice adaptation of this code to run with the hardware from AZSMZ:
+https://github.com/cxandy/esp8266-weather-station-color
 
 
 
