@@ -28,10 +28,9 @@ See more at https://blog.squix.org
 #include <SPI.h>
 #include <ESP8266WiFi.h>
 
-#ifdef HAVE_TOUCHPAD
-  #include <XPT2046_Touchscreen.h>
-  #include "TouchControllerWS.h"
-#endif 
+#include <XPT2046_Touchscreen.h>
+#include "TouchControllerWS.h"
+
 
 /***
  * Install the following libraries through Arduino Library Manager
@@ -76,22 +75,22 @@ int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
-#ifndef BATT
-  ADC_MODE(ADC_VCC);
-#endif
+
+ADC_MODE(ADC_VCC);
+
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
 Carousel carousel(&gfx, 0, 0, 240, 100);
 
-#ifdef HAVE_TOUCHPAD
-  XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
-  TouchControllerWS touchController(&ts);
 
-  void calibrationCallback(int16_t x, int16_t y);
-  CalibrationCallback calibration = &calibrationCallback;
+XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
+TouchControllerWS touchController(&ts);
+
+void calibrationCallback(int16_t x, int16_t y);
+CalibrationCallback calibration = &calibrationCallback;
   
-#endif 
+
 
 WGConditions conditions;
 WGForecast forecasts[MAX_FORECASTS];
@@ -150,18 +149,14 @@ void setup() {
   // Turn on the background LED
   Serial.println(TFT_LED);
   pinMode(TFT_LED, OUTPUT);
+  digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
 
-  #ifdef TFT_LED_LOW
-    digitalWrite(TFT_LED, LOW);    // LOW to Turn on;
-  #else
-    digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
-  #endif
   
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
-#ifdef HAVE_TOUCHPAD 
+
   ts.begin();
   SPIFFS.begin();
   //SPIFFS.remove("/calibration.txt");
@@ -180,7 +175,7 @@ void setup() {
     }
     touchController.saveCalibration();
   }
-#endif  
+
 
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
@@ -194,60 +189,8 @@ void setup() {
 long lastDrew = 0;
 bool btnClick;
 
-#ifdef LM75
-  #include <Wire.h>
-  float temperature = 0.0;
-
-  float lm75() {
-    unsigned int data[2];
-
-    Wire.begin(SDA_PIN,SCL_PIN);
-    Wire.setClock(700000);
-  
-    // Start I2C Transmission
-    Wire.beginTransmission(Addr);
-    // Select temperature data register
-    Wire.write(0x00);
-    // Stop I2C Transmission
-    Wire.endTransmission();
-  
-    // Request 2 bytes of data
-    Wire.requestFrom(Addr,2);
-
-    // Read 2 bytes of data
-    // temp msb, temp lsb
-    if(Wire.available()==2)
-    {
-      data[0] = Wire.read();
-      data[1] = Wire.read();
-    } 
-    //  Serial.println(data[0]);  
-    //  Serial.println(data[1]);
-    
-    // Convert the data to 9-bits
-    int temp = (data[0] * 256 + (data[1] & 0x80)) / 128;
-    if (temp > 255){
-      temp -= 512;
-    }
-    float cTemp = temp * 0.5;
-    float fTemp = cTemp * 1.8 + 32;
-  
-    // Output data to serial monitor
-    //  Serial.print("Temperature in Celsius:  ");
-    //  Serial.print(cTemp);
-    //  Serial.println(" C");
-    //  Serial.print("Temperature in Fahrenheit:  ");
-    //  Serial.print(fTemp);
-    //  Serial.println(" F");  
-    if (IS_METRIC) 
-      return cTemp; 
-    else
-      return fTemp;    
-  }
-#endif
-
 void loop() {
-#ifdef HAVE_TOUCHPAD
+
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     if (p.y < 80) {
@@ -256,28 +199,6 @@ void loop() {
       screen = (screen + 1) % screenCount;
     }
   }
-#else
-  pinMode(BTN_1, INPUT_PULLUP);
-  delay(5);
-  int btnState = digitalRead(BTN_1);
-  
-  if (btnState == LOW){
-    if(canBtnPress){
-      timerPress = millis();
-      canBtnPress = false;
-    } else {
-        if ((!btnClick) && ((millis() - timerPress)>1000)) {
-          btnClick = true;
-        } 
-    }
-  }else if(!canBtnPress){
-    canBtnPress = true;
-    btnClick = false;
-    if ((millis() - timerPress)<800) {
-        screen = (screen + 1) % screenCount;        
-    }
-  } 
-#endif  
 
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
@@ -411,9 +332,7 @@ void drawTime() {
   }
 
   drawWifiQuality();
-  #ifdef BATT
-    drawBattery();
-  #endif 
+
 }
 
 // draws current weather information
@@ -435,12 +354,7 @@ void drawCurrentWeather() {
     degreeSign = "°C";
   }
 
-  #ifdef LM75
-    if (canBtnPress) temperature = lm75(); 
-    String temp = temperature + degreeSign;
-  #else
-    String temp = conditions.currentTemp + degreeSign;
-  #endif
+  String temp = conditions.currentTemp + degreeSign;
       
   gfx.drawString(220, 78, temp);
 
@@ -578,23 +492,6 @@ void drawWifiQuality() {
   }
 }
 
-void drawBattery() {
-  uint8_t percentage = 100;
-  float power = analogRead(A0) * 49 / 10240.0;
-  if (power > 4.15) percentage = 100;
-  else if (power < 3.7) percentage = 0;
-  else percentage = (power - 3.7) * 100 / (4.15-3.7);
-  
-  gfx.setColor(MINI_WHITE);
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);  
-  gfx.drawString(26, 9, String(percentage) + "%");
-  gfx.drawRect(1, 11, 18, 9);
-  gfx.drawLine(21,13,21,17);  
-  gfx.drawLine(22,13,22,17);  
-  gfx.setColor(MINI_BLUE); 
-  gfx.fillRect(3, 13, 15 * percentage / 100, 5);
-}
-
 void drawForecastTable(uint8_t start) {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -655,13 +552,7 @@ void drawAbout() {
   drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
   drawLabelValue(9, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
-  
-  #ifdef BATT
-    drawLabelValue(11, "Battery: ", String(analogRead(A0) * 49 / 10240.0) +"V");
-  #else
-    drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
-  #endif     
-  
+  drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
   drawLabelValue(12, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
   char time_str[15];
   const uint32_t millis_in_day = 1000 * 60 * 60 * 24;

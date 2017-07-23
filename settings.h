@@ -27,38 +27,16 @@ See more at http://blog.squix.ch
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
 
-#define SQUIX         10
-#define AZSMZ_1_1     11
 
-#define BOARD SQUIX
-//#define BOARD AZSMZ_1_1
+// Pins for the ILI9341
+#define TFT_DC D2
+#define TFT_CS D1
+#define TFT_LED D8
 
-#if BOARD == SQUIX
-  // Pins for the ILI9341
-  #define TFT_DC D2
-  #define TFT_CS D1
-  #define TFT_LED D8
-  
-  #define HAVE_TOUCHPAD
-  #define TOUCH_CS D3
-  #define TOUCH_IRQ  D4
+#define HAVE_TOUCHPAD
+#define TOUCH_CS D3
+#define TOUCH_IRQ  D4
     
-#elif BOARD == AZSMZ_1_1
-  #define TFT_DC 5
-  #define TFT_CS 4
-  #define TFT_LED 16
-  #define TFT_LED_LOW       // set LOW to Turn on;
-
-  #define BTN_1 0
-
-  #define LM75
-  #define SDA_PIN 0
-  #define SCL_PIN 2  
-  // LM75A Address
-  #define Addr 0x48  
-  #define BATT
-
-#endif
 
 
 // Wunderground Settings
@@ -68,7 +46,7 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
 
 const String DISPLAYED_CITY_NAME = "Zürich";
-const String WUNDERGRROUND_API_KEY = "WUNDERGROUND_KEY";
+const String WUNDERGRROUND_API_KEY = "<WUNDERGRROUND_API_KEY>";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
