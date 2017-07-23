@@ -25,7 +25,8 @@ See more at http://blog.squix.ch
 #define WIFI_PASS "yourpassw0rd"
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
-const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
+const int SLEEP_INTERVAL_SECS = 60;   // Going to Sleep or screen saver after idle times, set 0 for dont sleep.
+//#define DEEP_SLEEP                  // go to deep sleep after SLEEP_INTERVAL_SECS.
 
 #define SQUIX         10
 #define AZSMZ_1_1     11

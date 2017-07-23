@@ -54,9 +54,6 @@ See more at https://blog.squix.org
 #include "moonphases.h"
 #include "weathericons.h"
 
-
-
-
 #define MINI_BLACK 0
 #define MINI_WHITE 1
 #define MINI_YELLOW 2
@@ -102,7 +99,7 @@ simpleDSTadjust dstAdjusted(StartRule, EndRule);
 
 void updateData();
 void drawProgress(uint8_t percentage, String text);
-void drawTime();
+void drawTime(bool saver = false);
 void drawCurrentWeather();
 void drawForecast();
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
@@ -282,6 +279,10 @@ void loop() {
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
     drawTime();
+    drawWifiQuality();
+    #ifdef BATT
+      drawBattery();
+    #endif     
     int remainingTimeBudget = carousel.update();
     if (remainingTimeBudget > 0) {
       // You can do some work here
@@ -299,6 +300,8 @@ void loop() {
     drawForecastTable(6);
   } else if (screen == 4) {
     drawAbout();
+  } else if (screen == screenCount) {
+    drawTime(true);
   }
   gfx.commit();
 
@@ -309,15 +312,19 @@ void loop() {
   }
 
   if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
-    drawProgress(25,"Going to Sleep!");
-    delay(1000);
-    drawProgress(50,"Going to Sleep!");
-    delay(1000);
-    drawProgress(75,"Going to Sleep!");
-    delay(1000);    
-    drawProgress(100,"Going to Sleep!");
-    // go to deepsleep for xx minutes or 0 = permanently
-    ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
+    #ifdef DEEP_SLEEP
+      drawProgress(25,"Going to Sleep!");
+      delay(1000);
+      drawProgress(50,"Going to Sleep!");
+      delay(1000);
+      drawProgress(75,"Going to Sleep!");
+      delay(1000);    
+      drawProgress(100,"Going to Sleep!");
+      // go to deepsleep for xx minutes or 0 = permanently
+      ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
+    #else
+      screen = screenCount;
+    #endif             
   }  
 }
 
@@ -373,47 +380,57 @@ void drawProgress(uint8_t percentage, String text) {
   gfx.commit();
 }
 
-// draws the clock
-void drawTime() {
+String time_prev;
 
+// draws the clock
+void drawTime(bool saver) {
+  static int x;
+  static int y;
+  if (!saver) {
+    x = 120;
+    y = 6;
+  }  
   char *dstAbbrev;
   char time_str[11];
   time_t now = dstAdjusted.time(&dstAbbrev);
   struct tm * timeinfo = localtime (&now);
+
+  if (IS_STYLE_12HR) {
+    int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
+    sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
+  } else {
+    sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+  }
+
+  if (saver && !time_prev.equals(time_str)) {
+    x = random(75,130);
+    y = random(270);
+    time_prev = time_str;
+  }
 
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_WHITE);
   String date = ctime(&now);
   date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
-  gfx.drawString(120, 6, date);
+//  gfx.drawString(120, 6, date);
+  gfx.drawString(x, y, date);  
 
   gfx.setFont(ArialRoundedMTBold_36);
+//  gfx.drawString(120, 20, time_str);
+  gfx.drawString(x, y+14, time_str);
 
-  if (IS_STYLE_12HR) {
-    int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
-    sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
-    gfx.drawString(120, 20, time_str);
-  } else {
-    sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    gfx.drawString(120, 20, time_str);
-  }
 
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setFont(ArialMT_Plain_10);
   gfx.setColor(MINI_BLUE);
   if (IS_STYLE_12HR) {
     sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour>=12?"PM":"AM");
-    gfx.drawString(195, 27, time_str);
   } else {
     sprintf(time_str, "%s", dstAbbrev);
-    gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
   }
-
-  drawWifiQuality();
-  #ifdef BATT
-    drawBattery();
-  #endif 
+//  gfx.drawString(195, 27, time_str);  
+  gfx.drawString(x + 75, y + 21, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
 }
 
 // draws current weather information
