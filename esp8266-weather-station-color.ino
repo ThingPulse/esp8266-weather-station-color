@@ -158,7 +158,11 @@ void setup() {
 
 
   ts.begin();
-  SPIFFS.begin();
+
+  bool isFSMounted = SPIFFS.begin();
+  if (!isFSMounted) {
+    SPIFFS.format();
+  }
   //SPIFFS.remove("/calibration.txt");
   boolean isCalibrationAvailable = touchController.loadCalibration();
   if (!isCalibrationAvailable) {
