@@ -156,6 +156,7 @@ void setup() {
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
+  connectWifi();
 
   ts.begin();
 
@@ -248,8 +249,7 @@ void loop() {
 
 // Update the internet based information and update screen
 void updateData() {
-  WiFi.mode(WIFI_STA);
-  connectWifi();
+
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
 
@@ -275,7 +275,6 @@ void updateData() {
   astronomyClient = nullptr;
   moonAgeImage = String((char) (65 + 26 * (((15 + astronomy.moonAge.toInt()) % 30) / 30.0)));
 
-  WiFi.mode(WIFI_OFF);
   delay(1000);
 }
 

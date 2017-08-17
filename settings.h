@@ -24,7 +24,7 @@ See more at http://blog.squix.ch
 #define WIFI_SSID "yourssid"
 #define WIFI_PASS "yourpassw0rd"
 
-const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
+const int UPDATE_INTERVAL_SECS = 15 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
 
 
@@ -45,8 +45,8 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CH/Zurich.json
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
 
-const String DISPLAYED_CITY_NAME = "Zürich";
-const String WUNDERGRROUND_API_KEY = "<WUNDERGRROUND_API_KEY>";
+const String DISPLAYED_CITY_NAME = "Zurich";
+const String WUNDERGRROUND_API_KEY = "<YOUR_WUNDERGROUND_API_KEY>";
 const String WUNDERGRROUND_LANGUAGE = "EN";
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
