@@ -80,7 +80,7 @@ Just include the correct file at the top of code.
 As I am not able to reproduce steps for converting custom font files for extended language sets as Latin or Cyrillic, I used function to transliterate these characters which font cannot show to show basic version of there characters.
 
 You can adjust your characters by editing array in function
-```
+```c++
   String Translit(String str) {
       String lat_up[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" , "Ď"  };
       String lat_low[] = {"ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď"};
