@@ -60,10 +60,12 @@ Please have a good look at the settings.h file. There you can:
 
 ## OTA Updating
 There is OTA Web based updater built in, see settings.h
-    #define HOST "esp8266-MeteoStation"
-    #define UPDATE_PATH "/update"
-    #define UPDATE_USERNAME "admin"
-    #define UPDATE_PASSWORD "admin"
+```c++
+  #define HOST "esp8266-MeteoStation"
+  #define UPDATE_PATH "/update"
+  #define UPDATE_USERNAME "admin"
+  #define UPDATE_PASSWORD "admin"
+```
 
 open browser and head to esp8266-MeteoStation/update or IP/update after entering correct username/password combination you will be able to load new firmware and update it remotely.
 Keep in mind that overall sketch should be less than 50% of device memory.
@@ -73,7 +75,7 @@ There are language files containing strings which are used in UI.
 There are still some strings hardcoded to the weather station library.
 For now there is original English and Slovak file.
 Just include the correct file at the top of code.
-```
+```c++
   #include <language_EN.h>
 ```
 
