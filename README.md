@@ -73,23 +73,26 @@ There are language files containing strings which are used in UI.
 There are still some strings hardcoded to the weather station library.
 For now there is original English and Slovak file.
 Just include the correct file at the top of code.
-    #include <language_EN.h>
+```
+  #include <language_EN.h>
+```
 
 As I am not able to reproduce steps for converting custom font files for extended language sets as Latin or Cyrillic, I used function to transliterate these characters which font cannot show to show basic version of there characters.
 
 You can adjust your characters by editing array in function
-    String Translit(String str) {
-        String lat_up[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" , "Ď"  };
-        String lat_low[] = {"ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď"};
-        String trans_up[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O", "D"};
-        String trans_low[] = { "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d"};
+```
+  String Translit(String str) {
+      String lat_up[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" , "Ď"  };
+      String lat_low[] = {"ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď"};
+      String trans_up[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O", "D"};
+      String trans_low[] = { "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d"};
 
-        for (int i = 0; i < 11 ; i++) {
-          str.replace(lat_up[i],trans_up[i]);
-          str.replace(lat_low[i],trans_low[i]);
-        }
+      for (int i = 0; i < 11 ; i++) {
+        str.replace(lat_up[i],trans_up[i]);
+        str.replace(lat_low[i],trans_low[i]);
+      }
 
-        return str;
-    }
-
+      return str;
+  }
+```
 After editing the array just use the correct number of elements in array in for() function.
