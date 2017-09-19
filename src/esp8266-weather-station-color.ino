@@ -27,10 +27,15 @@ See more at https://blog.squix.org
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+#include <ESP8266HTTPUpdateServer.h>
 
 #include <XPT2046_Touchscreen.h>
 #include "TouchControllerWS.h"
 
+ESP8266WebServer httpServer(80);
+ESP8266HTTPUpdateServer httpUpdater;
 
 /***
  * Install the following libraries through Arduino Library Manager
@@ -47,9 +52,10 @@ See more at https://blog.squix.org
 #include <MiniGrafx.h>
 #include <Carousel.h>
 #include <ILI9341_SPI.h>
+#include <language_EN.h>
 
 
-#include "ArialRounded.h"
+#include "OpenSans.h"
 #include "moonphases.h"
 #include "weathericons.h"
 
@@ -75,6 +81,7 @@ int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
+char buffer[30];
 
 ADC_MODE(ADC_VCC);
 
@@ -89,7 +96,7 @@ TouchControllerWS touchController(&ts);
 
 void calibrationCallback(int16_t x, int16_t y);
 CalibrationCallback calibration = &calibrationCallback;
-  
+
 
 
 WGConditions conditions;
@@ -104,6 +111,7 @@ void drawProgress(uint8_t percentage, String text);
 void drawTime();
 void drawCurrentWeather();
 void drawForecast();
+void drawWifiQuality();
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
 void drawAstronomy();
 void drawCurrentWeatherDetail();
@@ -128,6 +136,7 @@ long timerPress;
 bool canBtnPress;
 
 void connectWifi() {
+  WiFi.mode(WIFI_STA);
   if (WiFi.status() == WL_CONNECTED) return;
   //Manual Wifi
   WiFi.begin(WIFI_SSID,WIFI_PASS);
@@ -135,7 +144,7 @@ void connectWifi() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     if (i>80) i=0;
-    drawProgress(i,"Connecting to WiFi");
+    drawProgress(i, Translit(FPSTR (str_connecting_to_wifi)));
     i+=10;
     Serial.print(".");
   }
@@ -151,12 +160,18 @@ void setup() {
   pinMode(TFT_LED, OUTPUT);
   digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
 
-  
+
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
   connectWifi();
+
+  MDNS.begin(HOST);
+  httpUpdater.setup(&httpServer, UPDATE_PATH, UPDATE_USERNAME, UPDATE_PASSWORD);
+  httpServer.begin();
+
+  MDNS.addService("http", "tcp", 80);
 
   ts.begin();
 
@@ -173,7 +188,7 @@ void setup() {
       gfx.fillBuffer(0);
       gfx.setColor(MINI_YELLOW);
       gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-      gfx.drawString(120, 160, "Please calibrate\ntouch screen by\ntouch point");
+      gfx.drawString(120, 160, Translit(FPSTR (str_please_calibrate)));
       touchController.continueCalibration();
       gfx.commit();
       yield();
@@ -196,12 +211,15 @@ bool btnClick;
 
 void loop() {
 
+  httpServer.handleClient();
+
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     if (p.y < 80) {
       IS_STYLE_12HR = !IS_STYLE_12HR;
     } else {
-      screen = (screen + 1) % screenCount;
+      //delay(1500);
+      //screen = (screen + 1) % screenCount;
     }
   }
 
@@ -235,40 +253,42 @@ void loop() {
   }
 
   if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
-    drawProgress(25,"Going to Sleep!");
+    drawProgress(25, Translit(FPSTR (str_going_to_sleep)));
     delay(1000);
-    drawProgress(50,"Going to Sleep!");
+    drawProgress(50, Translit(FPSTR (str_going_to_sleep)));
     delay(1000);
-    drawProgress(75,"Going to Sleep!");
-    delay(1000);    
-    drawProgress(100,"Going to Sleep!");
+    drawProgress(75, Translit(FPSTR (str_going_to_sleep)));
+    delay(1000);
+    drawProgress(100, Translit(FPSTR (str_going_to_sleep)));
     // go to deepsleep for xx minutes or 0 = permanently
     ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
-  }  
+  }
+
+
 }
 
 // Update the internet based information and update screen
 void updateData() {
 
   gfx.fillBuffer(MINI_BLACK);
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
 
-  drawProgress(10, "Updating time...");
+  drawProgress(10, Translit(FPSTR (str_updating_time)));
   configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
 
-  drawProgress(50, "Updating conditions...");
+  drawProgress(50, Translit(FPSTR (str_updating_conditions)));
   WundergroundConditions *conditionsClient = new WundergroundConditions(IS_METRIC);
   conditionsClient->updateConditions(&conditions, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete conditionsClient;
   conditionsClient = nullptr;
 
-  drawProgress(70, "Updating forecasts...");
+  drawProgress(70,  Translit(FPSTR (str_updating_forecasts)));
   WundergroundForecast *forecastClient = new WundergroundForecast(IS_METRIC);
   forecastClient->updateForecast(forecasts, MAX_FORECASTS, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete forecastClient;
   forecastClient = nullptr;
 
-  drawProgress(80, "Updating astronomy...");
+  drawProgress(80, Translit(FPSTR (str_updating_astronomy)));
   WundergroundAstronomy *astronomyClient = new WundergroundAstronomy(IS_STYLE_12HR);
   astronomyClient->updateAstronomy(&astronomy, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
   delete astronomyClient;
@@ -281,11 +301,12 @@ void updateData() {
 // Progress bar helper
 void drawProgress(uint8_t percentage, String text) {
   gfx.fillBuffer(MINI_BLACK);
+  gfx.setColor(MINI_WHITE);
   gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo);
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 80, "https://blog.squix.org");
+  gfx.drawString(120, 80, Translit(FPSTR (blog_address)));
   gfx.setColor(MINI_YELLOW);
 
   gfx.drawString(120, 146, text);
@@ -306,13 +327,13 @@ void drawTime() {
   struct tm * timeinfo = localtime (&now);
 
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setColor(MINI_WHITE);
   String date = ctime(&now);
   date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
   gfx.drawString(120, 6, date);
 
-  gfx.setFont(ArialRoundedMTBold_36);
+  gfx.setFont(OpenSans_36);
 
   if (IS_STYLE_12HR) {
     int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
@@ -338,18 +359,19 @@ void drawTime() {
 
 }
 
+
 // draws current weather information
 void drawCurrentWeather() {
   gfx.setTransparentColor(MINI_BLACK);
   gfx.drawPalettedBitmapFromPgm(0, 55, getMeteoconIconFromProgmem(conditions.weatherIcon));
   // Weather Text
 
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setColor(MINI_BLUE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.drawString(220, 65, DISPLAYED_CITY_NAME);
 
-  gfx.setFont(ArialRoundedMTBold_36);
+  gfx.setFont(OpenSans_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   String degreeSign = "°F";
@@ -358,13 +380,13 @@ void drawCurrentWeather() {
   }
 
   String temp = conditions.currentTemp + degreeSign;
-      
+
   gfx.drawString(220, 78, temp);
 
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setColor(MINI_YELLOW);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 118, conditions.weatherText);
+  gfx.drawString(220, 118, Translit(conditions.weatherText));
 
 }
 
@@ -384,11 +406,11 @@ void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t 
 // helper for the forecast columns
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.setColor(MINI_YELLOW);
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   String day = forecasts[dayIndex].forecastTitle.substring(0, 3);
   day.toUpperCase();
-  gfx.drawString(x + 25, y - 15, day);
+  gfx.drawString(x + 25, y - 15, Translit(day));
 
   gfx.setColor(MINI_WHITE);
   gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
@@ -407,20 +429,20 @@ void drawAstronomy() {
   gfx.drawString(120, 275, moonAgeImage);
 
   gfx.setColor(MINI_WHITE);
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(120, 250, astronomy.moonPhase);
+  gfx.drawString(120, 250, Translit(astronomy.moonPhase));
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(5, 250, "Sun");
+  gfx.drawString(5, 250, Translit(FPSTR (str_sun)));
   gfx.setColor(MINI_WHITE);
   gfx.drawString(5, 276, astronomy.sunriseTime);
   gfx.drawString(5, 291, astronomy.sunsetTime);
 
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(235, 250, "Moon");
+  gfx.drawString(235, 250, Translit(FPSTR (str_moon)));
   gfx.setColor(MINI_WHITE);
   gfx.drawString(235, 276, astronomy.moonriseTime);
   gfx.drawString(235, 291, astronomy.moonsetTime);
@@ -428,10 +450,10 @@ void drawAstronomy() {
 }
 
 void drawCurrentWeatherDetail() {
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 2, "Current Conditions");
+  gfx.drawString(120, 2, Translit(FPSTR (str_current_conditions)));
 
   //gfx.setTransparentColor(MINI_BLACK);
   //gfx.drawPalettedBitmapFromPgm(0, 20, getMeteoconIconFromProgmem(conditions.weatherIcon));
@@ -442,21 +464,21 @@ void drawCurrentWeatherDetail() {
   }
   // String weatherIcon;
   // String weatherText;
-  drawLabelValue(0, "Temperature:", conditions.currentTemp + degreeSign);
-  drawLabelValue(1, "Feels Like:", conditions.feelslike + degreeSign);
-  drawLabelValue(2, "Dew Point:", conditions.dewPoint + degreeSign);
-  drawLabelValue(3, "Wind Speed:", conditions.windSpeed);
-  drawLabelValue(4, "Wind Dir:", conditions.windDir);
-  drawLabelValue(5, "Humidity:", conditions.humidity);
-  drawLabelValue(6, "Pressure:", conditions.pressure);
-  drawLabelValue(7, "Precipitation:", conditions.precipitationToday);
-  drawLabelValue(8, "UV:", conditions.UV);
+  drawLabelValue(0, Translit(FPSTR (str_temperature)), conditions.currentTemp + degreeSign);
+  drawLabelValue(1, Translit(FPSTR (str_feels_like)), conditions.feelslike + degreeSign);
+  drawLabelValue(2, Translit(FPSTR (str_dew_point)), conditions.dewPoint + degreeSign);
+  drawLabelValue(3, Translit(FPSTR (str_wind_speed)), conditions.windSpeed);
+  drawLabelValue(4, Translit(FPSTR (str_wind_dir)), conditions.windDir);
+  drawLabelValue(5, Translit(FPSTR (str_humidity)), conditions.humidity);
+  drawLabelValue(6, Translit(FPSTR (str_pressure)), conditions.pressure);
+  drawLabelValue(7, Translit(FPSTR (str_precipitation)), conditions.precipitationToday);
+  drawLabelValue(8, Translit(FPSTR (str_uv)), conditions.UV);
 
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(15, 185, "Description: ");
+  gfx.drawString(15, 185, Translit(FPSTR (str_description)));
   gfx.setColor(MINI_WHITE);
-  gfx.drawStringMaxWidth(15, 200, 240 - 2 * 15, forecasts[0].forecastText);
+  gfx.drawStringMaxWidth(15, 200, 240 - 2 * 15, Translit(forecasts[0].forecastText));
 }
 
 void drawLabelValue(uint8_t line, String label, String value) {
@@ -484,7 +506,7 @@ int8_t getWifiQuality() {
 void drawWifiQuality() {
   int8_t quality = getWifiQuality();
   gfx.setColor(MINI_WHITE);
-  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);  
+  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.drawString(228, 9, String(quality) + "%");
   for (int8_t i = 0; i < 4; i++) {
     for (int8_t j = 0; j < 2 * (i + 1); j++) {
@@ -496,10 +518,10 @@ void drawWifiQuality() {
 }
 
 void drawForecastTable(uint8_t start) {
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 2, "Forecasts");
+  gfx.drawString(120, 2, Translit(FPSTR (str_forecasts)));
   uint16_t y = 0;
 
   String degreeSign = "°F";
@@ -515,9 +537,9 @@ void drawForecastTable(uint8_t start) {
     gfx.drawPalettedBitmapFromPgm(0, y, getMiniMeteoconIconFromProgmem(forecasts[i].forecastIcon));
 
     gfx.setColor(MINI_YELLOW);
-    gfx.setFont(ArialRoundedMTBold_14);
+    gfx.setFont(OpenSans_14);
 
-    gfx.drawString(50, y, forecasts[i].forecastTitle);
+    gfx.drawString(50, y, Translit(forecasts[i].forecastTitle));
     gfx.setColor(MINI_WHITE);
     gfx.drawString(50, y + 15, getShortText(forecasts[i].forecastIcon));
     gfx.setColor(MINI_WHITE);
@@ -544,12 +566,12 @@ void drawAbout() {
   gfx.fillBuffer(MINI_BLACK);
   gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo);
 
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 80, "https://blog.squix.org");
+  gfx.drawString(120, 80, Translit(FPSTR (blog_address)));
 
-  gfx.setFont(ArialRoundedMTBold_14);
+  gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   drawLabelValue(7, "Heap Mem:", String(ESP.getFreeHeap() / 1024)+"kb");
   drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
@@ -578,3 +600,17 @@ void calibrationCallback(int16_t x, int16_t y) {
   gfx.fillCircle(x, y, 10);
 }
 
+
+String Translit(String str) {
+    String lat_up[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" , "Ď"  };
+    String lat_low[] = {"ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď"};
+    String trans_up[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O", "D"};
+    String trans_low[] = { "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d"};
+
+    for (int i = 0; i < 11 ; i++) {
+      str.replace(lat_up[i],trans_up[i]);
+      str.replace(lat_low[i],trans_low[i]);
+    }
+
+    return str;
+}

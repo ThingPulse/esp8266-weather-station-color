@@ -21,10 +21,15 @@ See more at http://blog.squix.ch
 #include <simpleDSTadjust.h>
 
 // Setup
-#define WIFI_SSID "yourssid"
-#define WIFI_PASS "yourpassw0rd"
+#define WIFI_SSID "Your-SSID"
+#define WIFI_PASS "YoUrSc3RtPASS"
 
-const int UPDATE_INTERVAL_SECS = 15 * 60; // Update every 10 minutes
+#define HOST "esp8266-MeteoStation"
+#define UPDATE_PATH "/update"
+#define UPDATE_USERNAME "admin"
+#define UPDATE_PASSWORD "admin"
+
+const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
 
 
@@ -36,7 +41,7 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 #define HAVE_TOUCHPAD
 #define TOUCH_CS D3
 #define TOUCH_IRQ  D4
-    
+
 
 
 // Wunderground Settings
@@ -44,12 +49,13 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 // http://api.wunderground.com/api/WUNDERGROUND_API_KEY/conditions/q/WUNDERGROUND_COUNTTRY/WUNDERGROUND_CITY.json
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CH/Zurich.json
 // e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
+// http://api.wunderground.com/api/027189a1354cd237/conditions/q/SK/Dubnica%20nad%20vahom.json
 
-const String DISPLAYED_CITY_NAME = "Zurich";
-const String WUNDERGRROUND_API_KEY = "<YOUR_WUNDERGROUND_API_KEY>";
-const String WUNDERGRROUND_LANGUAGE = "EN";
-const String WUNDERGROUND_COUNTRY = "CH";
-const String WUNDERGROUND_CITY = "Zurich";
+const String DISPLAYED_CITY_NAME = "Dubnica nad Vahom";
+const String WUNDERGRROUND_API_KEY = "000a00003212";
+const String WUNDERGRROUND_LANGUAGE = "SK";
+const String WUNDERGROUND_COUNTRY = "SK";
+const String WUNDERGROUND_CITY = "Dubnica%20nad%20vahom";
 
 #define UTC_OFFSET + 1
 struct dstRule StartRule = {"CEST", Last, Sun, Mar, 2, 3600}; // Central European Summer Time = UTC/GMT +2 hours
@@ -67,10 +73,9 @@ bool IS_METRIC = true;
 bool IS_STYLE_12HR = false;
 
 // change for different ntp (time servers)
-#define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
+#define NTP_SERVERS "0.europe.pool.ntp.org", "1.europe.pool.ntp.org", "2.europe.pool.ntp.org"
 // #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
 
 /***************************
  * End Settings
  **************************/
-
