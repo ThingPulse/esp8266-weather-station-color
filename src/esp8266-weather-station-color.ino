@@ -218,8 +218,8 @@ void loop() {
     if (p.y < 80) {
       IS_STYLE_12HR = !IS_STYLE_12HR;
     } else {
-      //delay(1500);
-      //screen = (screen + 1) % screenCount;
+      // if it is not touch connected, and screens are rotating very fast, comment out this
+      screen = (screen + 1) % screenCount;
     }
   }
 
@@ -602,14 +602,21 @@ void calibrationCallback(int16_t x, int16_t y) {
 
 
 String Translit(String str) {
-    String lat_up[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" , "Ď"  };
-    String lat_low[] = {"ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď"};
-    String trans_up[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O", "D"};
-    String trans_low[] = { "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d"};
+    String special[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" ,
+     "Ď", "ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď" ,
+     "а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о","п","р","с",
+     "т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я","А","Б","В","Г","Д",
+     "Е","Ё","Ж","З","И","Й","К","Л","М","Н","О","П","Р","С","Т","У","Ф","Х","Ц",
+     "Ч","Ш","Щ","Ъ","Ы","Ь","Э","Ю","Я" };
+    String latin[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O",
+     "D",  "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d" ,
+     "a","b","v","g","d","e","io","zh","z","i","y","k","l","m","n","o","p",
+     "r","s","t","u","f","h","ts","ch","sh","sht","a","i","y","e","yu","ya",
+     "A","B","V","G","D","E","Io","Zh","Z","I","Y","K","L","M","N","O","P",
+     "R","S","T","U","F","H","Ts","Ch","Sh","Sht","A","I","Y","e","Yu","Ya"};
 
     for (int i = 0; i < 11 ; i++) {
-      str.replace(lat_up[i],trans_up[i]);
-      str.replace(lat_low[i],trans_low[i]);
+      str.replace(special[i],latin[i]);
     }
 
     return str;
