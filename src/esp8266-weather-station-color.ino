@@ -615,9 +615,8 @@ String Translit(String str) {
      "A","B","V","G","D","E","Io","Zh","Z","I","Y","K","L","M","N","O","P",
      "R","S","T","U","F","H","Ts","Ch","Sh","Sht","A","I","Y","e","Yu","Ya"};
 
-    for (int i = 0; i < 11 ; i++) {
+    for (int i = 0; i < (sizeof(special) / sizeof(special[0])) ; i++) {
       str.replace(special[i],latin[i]);
     }
-
     return str;
 }
