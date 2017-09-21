@@ -83,18 +83,23 @@ As I am not able to reproduce steps for converting custom font files for extende
 
 You can adjust your characters by editing array in function
 ```c++
-  String Translit(String str) {
-      String lat_up[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" , "Ď"  };
-      String lat_low[] = {"ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď"};
-      String trans_up[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O", "D"};
-      String trans_low[] = { "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d"};
+String Translit(String str) {
+    String special[] = {"Ľ" , "Š" , "Č" , "Ť" , "Ž" , "Ý" , "Á" , "Í" , "É" , "Ô" ,
+     "Ď", "ľ" , "š" , "č" , "ť" , "ž" , "ý" , "á" , "í" , "é" , "ô", "ď" ,
+     "а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о","п","р","с",
+     "т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я","А","Б","В","Г","Д",
+     "Е","Ё","Ж","З","И","Й","К","Л","М","Н","О","П","Р","С","Т","У","Ф","Х","Ц",
+     "Ч","Ш","Щ","Ъ","Ы","Ь","Э","Ю","Я" };
+    String latin[] = {"L" , "S" , "C" , "T" , "Z" , "Y" , "A" , "I" , "E" , "O",
+     "D",  "l" , "s" , "c" , "t" , "z" , "y" , "a" , "i" , "e" , "o","d" ,
+     "a","b","v","g","d","e","io","zh","z","i","y","k","l","m","n","o","p",
+     "r","s","t","u","f","h","ts","ch","sh","sht","a","i","y","e","yu","ya",
+     "A","B","V","G","D","E","Io","Zh","Z","I","Y","K","L","M","N","O","P",
+     "R","S","T","U","F","H","Ts","Ch","Sh","Sht","A","I","Y","e","Yu","Ya"};
 
-      for (int i = 0; i < 11 ; i++) {
-        str.replace(lat_up[i],trans_up[i]);
-        str.replace(lat_low[i],trans_low[i]);
-      }
-
-      return str;
-  }
+    for (int i = 0; i < (sizeof(special) / sizeof(special[0])) ; i++) {
+      str.replace(special[i],latin[i]);
+    }
+    return str;
+}
 ```
-After editing the array just use the correct number of elements in array in for() function.
