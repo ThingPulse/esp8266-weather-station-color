@@ -408,9 +408,10 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.setColor(MINI_YELLOW);
   gfx.setFont(OpenSans_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  String day = forecasts[dayIndex].forecastTitle.substring(0, 3);
+  String day = Translit(forecasts[dayIndex].forecastTitle);
+  day = day.substring(0, 3);
   day.toUpperCase();
-  gfx.drawString(x + 25, y - 15, Translit(day));
+  gfx.drawString(x + 25, y - 15, day);
 
   gfx.setColor(MINI_WHITE);
   gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
