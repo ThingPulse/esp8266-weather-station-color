@@ -25,12 +25,10 @@ See more at http://blog.squix.ch
 #define WIFI_PASS "YoUrSc3RtPASS"
 
 #define HOST "esp8266-MeteoStation"
-#define UPDATE_PATH "/update"
-#define UPDATE_USERNAME "admin"
-#define UPDATE_PASSWORD "admin"
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
+const int SCREENSVR_INTERVAL_SECS = 30;   // Off screen after idle times, set 0 for dont off
 
 
 // Pins for the ILI9341

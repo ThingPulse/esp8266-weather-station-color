@@ -27,15 +27,9 @@ See more at https://blog.squix.org
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
-#include <ESP8266HTTPUpdateServer.h>
 
 #include <XPT2046_Touchscreen.h>
 #include "TouchControllerWS.h"
-
-ESP8266WebServer httpServer(80);
-ESP8266HTTPUpdateServer httpUpdater;
 
 /***
  * Install the following libraries through Arduino Library Manager
@@ -82,6 +76,7 @@ int SCREEN_HEIGHT = 320;
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
 char buffer[30];
+bool isScreenSVR = false;
 
 ADC_MODE(ADC_VCC);
 
@@ -167,12 +162,6 @@ void setup() {
 
   connectWifi();
 
-  MDNS.begin(HOST);
-  httpUpdater.setup(&httpServer, UPDATE_PATH, UPDATE_USERNAME, UPDATE_PASSWORD);
-  httpServer.begin();
-
-  MDNS.addService("http", "tcp", 80);
-
   ts.begin();
 
   bool isFSMounted = SPIFFS.begin();
@@ -211,15 +200,19 @@ bool btnClick;
 
 void loop() {
 
-  httpServer.handleClient();
-
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
-    if (p.y < 80) {
-      IS_STYLE_12HR = !IS_STYLE_12HR;
+    if (isScreenSVR == true) {
+      digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
+      isScreenSVR = false;
+      timerPress = millis();
     } else {
-      // if it is not touch connected, and screens are rotating very fast, comment out this
-      screen = (screen + 1) % screenCount;
+      if (p.y < 80) {
+        IS_STYLE_12HR = !IS_STYLE_12HR;
+      } else {
+        //delay(1500);
+        screen = (screen + 1) % screenCount;
+      }
     }
   }
 
@@ -254,14 +247,20 @@ void loop() {
 
   if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
     drawProgress(25, Translit(FPSTR (str_going_to_sleep)));
-    delay(1000);
+    delay(333);
     drawProgress(50, Translit(FPSTR (str_going_to_sleep)));
-    delay(1000);
+    delay(333);
     drawProgress(75, Translit(FPSTR (str_going_to_sleep)));
-    delay(1000);
+    delay(333);
     drawProgress(100, Translit(FPSTR (str_going_to_sleep)));
     // go to deepsleep for xx minutes or 0 = permanently
     ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
+
+  }
+
+  if (SCREENSVR_INTERVAL_SECS && millis() - timerPress >= SCREENSVR_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
+    digitalWrite(TFT_LED, LOW);    // HIGH to Turn on;
+    isScreenSVR = true;
   }
 
 
