@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>TFT ILI9341 to 2bpp</title>
+    <meta name="description" content="Converter for ILI9341 display. Converts an image to an array.">
+    <meta name="keywords" content="ili9341, tft display,">  
+    <meta charset="UTF-8"> 
+    <meta name="author" content="Adriano Petrucci">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    
+    <script type="text/javascript">
+    
+      var values = [];
+      var imheight = 0;
+      var imwidth = 0;
+      var originalFile;
+      var originalImg;
+      var isArduinoSketch = false;
+	  
+	  function slidesproc(){
+	  	var thblack = document.getElementById("thblack");
+		var thwhite = document.getElementById("thwhite");
+		var thy = document.getElementById("thy");
+		var thb = document.getElementById("thb");
+		var output = document.getElementById("demo");
+		output.innerHTML = 'Modified: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;	  
+	  }
+	  
+	  function slidesinit(){
+	  	var thblack = document.getElementById("thblack");
+		var thwhite = document.getElementById("thwhite");
+		var thy = document.getElementById("thy");
+		var thb = document.getElementById("thb");
+		var output = document.getElementById("demo");
+		thblack.value = 50;
+		thwhite.value = 50;
+		thy.value = 36;
+		thb.value = 78;
+		output.innerHTML = 'Default: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;	  
+	  }
+	  
+	  function rgbTo4(r, g, b) {
+	  	var thblack = document.getElementById("thblack");
+		var thwhite = document.getElementById("thwhite");
+		var thy = document.getElementById("thy");
+		var thb = document.getElementById("thb");
+	  
+	  
+		  r /= 255, g /= 255, b /= 255;
+		  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+		  var h, s, l = (max + min) / 2;
+		  if (max == min) {
+			h = s = 0; // achromatic
+		  } else {
+			var d = max - min;
+			s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+			switch (max) {
+			  case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+			  case g: h = (b - r) / d + 2; break;
+			  case b: h = (r - g) / d + 4; break;
+			}
+			h /= 6;
+		  }
+		  if (l < thblack.value/200) return 0; // black
+		  
+		  if ((l > 1 - thwhite.value/200) || (s < 0.1)) return 1; // white hi lumin or low saturation
+		  
+		  if ((thy.value < thb.value) && ((h < thy.value/100) || (h > thb.value/100))) return 2; //yellow
+		  if ((thy.value >= thb.value) && ((h < thy.value/100) && (h > thb.value/100))) return 2; //yellow
+		  return 3; // blue 
+	  }
+      
+      function removeChilds(div)
+      {
+        if(div && div.innerHTML && div.style)
+        {
+          if(div.style.opacity * 100 > 0)
+          {
+            div.style.opacity -= 0.1;
+            window.setTimeout(function() {removeChilds(div);}, 100);
+          }
+          else
+          {
+            div.innerHTML = "";
+            div.style.opacity = 1;
+          }
+        }
+      }
+      
+      function selectText()
+      {
+        var range = document.createRange();
+        if(isArduinoSketch) showArduinoSketch(false);
+        range.selectNode(document.getElementById("img_array"));
+        window.getSelection().empty();
+        window.getSelection().addRange(range);
+        
+        var div     = document.getElementById('info_code');
+        
+        try 
+        {
+          var ok = document.execCommand('copy');
+          if (ok) div.innerHTML = "<span style='background-color:springgreen;color:darkblue;'>Copied to clipboard!</span><br>";
+          else    div.innerHTML = "<span style='background-color:red;color:darkgrey;'>Unable to copy.</span><br>";
+        } 
+        catch (err) 
+        {
+          div.innerHTML = "<span style='background-color:red;color:darkgrey;'>Unsupported browser " + err + ".</span><br>";
+        }
+        if(isArduinoSketch) showArduinoSketch();
+        window.setTimeout(function() {removeChilds(div);}, 1000);
+      }
+      
+      function writeVal(c, v)
+      {
+        var r = "0x" + ("0000" + (c).toString(16)).substr(-4);
+        if((v % 16) == 0) 
+          r += ", // 0x" + ("0000" + (v).toString(16)).substr(-4) + " (" + (v) + ")<br>";
+        else
+          r += ", ";
+        values[v-1] = c; 
+        return r; 
+      }
+	  
+	  function writeValShort(c, v, a=16)
+      {
+        var r = "0x" + ("00" + (c).toString(16)).substr(-2);
+        if((v % a) == 0) 
+//          r += ", // 0x" + ("00" + (v).toString(16)).substr(-2) + " (" + (v) + ")<br>  ";
+        r += ",<br>  ";
+        else
+          r += ", ";
+        values[v-1] = c; 
+        return r; 
+      }
+        
+      function previewFile() 
+      {
+        var preview = document.getElementById('preview');
+        originalFile= document.getElementById('filebase64').files[0];
+        var reader  = new FileReader();
+        originalImg = new Image();
+        var div     = document.getElementById('img_info');
+        var div2    = document.getElementById('img_array');
+        var substr  = "";
+        
+        //document.getElementById('image565').style.display='none';
+        
+        originalImg.onload = function ()  
+        {
+          var divHTML = "";
+          if(originalImg.width > 240 || originalImg.height > 320)
+          {
+            divHTML += "<span style='background-color:red;color:white;'>Warning: Display is 240x320. Image should be smaller.</span><br>";
+            if(originalImg.width > 240 && originalImg.width / originalImg.height > 240/320)
+            {
+              preview.style.width = "240px";
+              preview.style.height = (originalImg.height * 240 / originalImg.width) + "px";
+              imheight = parseInt(originalImg.height * 240 / originalImg.width);
+              imwidth = 240;
+            }
+            else
+            {
+              preview.style.width = (originalImg.width * 320 / originalImg.height) + "px";
+              preview.style.height = "320px";
+              imheight = 320;
+              imwidth = parseInt(originalImg.width * 320 / originalImg.height);
+            }
+          }
+          else
+          {
+            preview.style.width = originalImg.width + "px";
+            preview.style.height = originalImg.height + "px";
+            imheight = originalImg.height;
+            imwidth = originalImg.width;
+          }
+          
+          divHTML += "<span style=''>";
+          divHTML += "Source image size: " + originalImg.width + "x" + originalImg.height + " (" + (parseInt(originalFile.size / 10.24) / 100) + " kb) <br>";
+          divHTML += "File type : " + originalFile.type + " <br>";
+//          divHTML += "Memory on &micro;C: " + (imwidth * imheight * 2) + " bytes <br>";
+          divHTML += "</span>";
+          div.innerHTML = divHTML;
+          
+          div2.innerHTML = "";
+          
+          document.getElementById("options").style.display = 'block';
+        }
+        
+        reader.onloadend = function () 
+        {
+          preview.src = reader.result;
+          originalImg.src = reader.result;
+        }
+        
+        if (originalFile) 
+        {
+          reader.readAsDataURL(originalFile);
+        } 
+        else 
+        {
+          preview.src = "";
+          div.innerHTML = "Invalid file";
+        }
+        isArduinoSketch = false;
+      }
+        
+      function createArray()
+      {      
+        var canvas = document.createElement('canvas');
+        canvas.width = imwidth;
+        canvas.height = imheight;
+        var context = canvas.getContext('2d');
+        context.drawImage(originalImg, 0, 0, imwidth, imheight);
+        var pixelData = context.getImageData(0, 0, imwidth, imheight).data;
+        var div2 = document.getElementById('img_array');
+        
+        var d = new Date();
+        divHTML = "";
+/*		
+        divHTML += "// Generated by   : Image To Array 565 (www.petrucci.ch/arduino)<br>";
+        divHTML += "// Generated from : " + originalFile.name + "<br>";
+        divHTML += "// Time generated : " + d.toLocaleString() + "<br>";
+        divHTML += "// Image Size     : " + imwidth + "x" + imheight + " pixels<br>";
+        divHTML += "// Memory used    : " + (parseInt(imwidth * imheight * 2 / 10.24) / 100) + " kb<br>";
+        divHTML += "// Compressed     : YYYYYY<br>";
+        divHTML += "<br>";
+
+        divHTML += "#if defined(__AVR__)<br>";
+        divHTML += "  #include &lt;avr/pgmspace.h&gt;<br>";
+        divHTML += "#elif defined(__PIC32MX__)<br>";
+        divHTML += "  #define PROGMEM<br>";
+        divHTML += "#elif defined(__arm__)<br>";
+        divHTML += "  #define PROGMEM<br>";
+        divHTML += "#endif<br><br>";
+*/
+        divHTML += "<pre>const char " + originalFile.name.substring(0, originalFile.name.indexOf(".")) + "[] PROGMEM={<br>";
+		divHTML += "  0x01, // Version: 1<br>";
+		divHTML += "  0x02, // BitDepth: 2<br>";
+        divHTML += "  " + writeValShort((imwidth&0xff00)<<8, 2) + writeValShort(imwidth&0xff, 2) + "// Width: " + imwidth + "<br>";
+        divHTML += "  " + writeValShort((imheight&0xff00)<<8, 2) + writeValShort(imheight&0xff, 2) + "// Height: " + imheight + "<br>";
+		divHTML += "  // Round width to next byte: " + ((imwidth + 3) & ~3) + ", Total: [XXXXX] bytes<br>  ";
+		
+
+        var r,g,b,a,v,c,j,cp, z;
+        v = 0;
+        z = 0;
+		var iw = ((imwidth + 3) & ~3);
+
+        if(document.getElementById('compress').checked)
+        {
+          var c2, c1, ct;
+          var compressing = false;
+          var compressStep = 0;
+          var compressVal = 0;
+          var compressEqual = 0;
+          c = -2000;
+          c1 = -1000;
+          for(y=0;y<imheight;y++)
+          {
+            for(x=0;x<imwidth;x++)
+            {
+              r = pixelData[(x+y*imwidth)*4 + 0];
+              g = pixelData[(x+y*imwidth)*4 + 1];
+              b = pixelData[(x+y*imwidth)*4 + 2];
+              
+              c2 = c1;
+              c1 = c;
+              c = ((r>>3)<<11)+((g>>2)<<5)+((b>>3)<<0);
+              
+              if(compressing)
+              {
+                if(compressEqual > 0)
+                {
+                  if(c == c1)
+                  {
+                    compressEqual++;
+                    if(compressEqual > 250)
+                    {
+                      divHTML += writeVal(((compressEqual-1)<<8) | 0xfe, ++v);
+                      compressEqual = 1;
+                    }
+                  }
+                  else
+                  {
+                    divHTML += writeVal(((compressEqual-1)<<8) | 0xff, ++v);
+                    divHTML += writeVal(c, ++v);
+                    if((c & 0xe71c) == (c1 & 0xe71c)) compressStep = 0;
+                    else compressing = false;
+                    compressEqual = 0;
+                  }
+                }
+                else if(compressStep == 0)
+                {
+                  if((c & 0xe71c) == (c1 & 0xe71c)) 
+                  {
+                    compressVal = (((c^c1)&0x1800)>>6) | (((c^c1)&0x00e0)>>3) | (((c^c1)&0x003)>>0);
+                    compressStep = 1;
+                    if(c1==c2 && c == c1)
+                    {
+                      divHTML += writeVal(compressVal | 0xff, ++v);
+                      compressing = false;
+                    }
+                  }
+                  else 
+                  {
+                    compressing = false;
+                    divHTML += writeVal(0xff00, ++v); 
+                    divHTML += writeVal(c, ++v);
+                  }
+                }
+                else
+                {
+                  compressVal <<= 8;
+                  if((c & 0xe71c) == (c1 & 0xe71c)) 
+                  {
+                    compressVal += (((c^c1)&0x1800)>>6) | (((c^c1)&0x00e0)>>3) | (((c^c1)&0x003)>>0);
+                    compressStep = 0;
+                    divHTML += writeVal(compressVal, ++v);
+                  }
+                  else 
+                  {
+                    compressing = false;
+                    divHTML += writeVal(compressVal + 0xff, ++v); 
+                    divHTML += writeVal(c, ++v);
+                  }
+                }
+              }
+              else
+              {
+                divHTML += writeVal(c, ++v);
+                
+                if(c == c1) 
+                {
+                  compressing = true;
+                  compressEqual = 1;
+                }
+                else if((c & 0xe71c) == (c1 & 0xe71c)) 
+                {
+                  compressing = true;
+                  compressStep=0;
+                }
+              }
+            }
+          }
+          if(compressing && compressEqual > 0) divHTML += writeVal((compressEqual<<8)+0xff, ++v);
+          
+          divHTML = divHTML.replace("YYYYYY", (parseInt(v*2 / 10.24) / 100) + " kb (saved " + parseInt(100*(1-v/(imwidth * imheight))) + "%)");
+        }
+        else
+        {
+		  
+          for(y=0;y<imheight;y++)
+          {
+		    
+            for(x=0;x<iw;x++) 
+            {
+			  
+				r = pixelData[(x+y*imwidth)*4 + 0];
+				g = pixelData[(x+y*imwidth)*4 + 1];
+				b = pixelData[(x+y*imwidth)*4 + 2];
+              
+/*			  
+              if ((r == 0x7b) && (g == 0xc6) && (b == 0xe6)) cp = 3;      //l_blue
+			  else if ((r == 0xff) && (g == 0xff) && (b == 0x00)) cp = 2; // yellow
+			  else if ((r == 0xff) && (g == 0xff) && (b == 0xff)) cp = 1;  //white
+              else cp = 0;  //black all the rest
+*/              
+              c = (((r/8)&0x1f)<<11)+(((g/4)&0x3f)<<5)+(((b/8)&0x1f)<<0);
+			  
+			  cp = rgbTo4(r, g, b);		  
+/*			  
+              if (c == 0x7e3c) cp = 3;      //l_blue
+			  else if (c == 0xffe0) cp = 2; // yellow
+			  else if (c == 0xffff) cp = 1;  //white
+              else if (c == 0) cp = 0;  //black 
+*/			  
+			  if (x>=imwidth) cp = 0;
+			 
+			  z |= (cp<<(2*(3-(x%4))));
+			  z &= 0xff;
+			  
+              if (!(3-(x%4))) { //byte ready?
+				   divHTML += writeValShort(z, ++v, iw/4);
+				   z = 0;
+		      }
+            }
+			
+			
+          }
+          divHTML = divHTML.replace("YYYYYY", "not compressed");
+        }
+        if((v % (iw/4)) != 0) divHTML += "<br>";
+        divHTML += "};</pre>";
+        div2.innerHTML = divHTML.replace("XXXXX", v).replace(/,([^,]*)$/,' $1'); // remove last ','
+        
+        //document.getElementById('image565').style.display='block'; ///// preview
+        isArduinoSketch = false;
+		newimage();
+      }
+      
+      function newimage()
+      {
+        var c;
+        var canvas = document.createElement('canvas');
+        canvas.width = imwidth; 
+        canvas.height = imheight;
+        var context = canvas.getContext('2d');
+		//var imageData = context.createImageData(imwidth, imheight);
+		var imageData = context.createImageData(((imwidth + 3) & ~3), imheight);
+        var div2 = document.getElementById('img_array2');
+		
+        if(document.getElementById('compress').checked)
+        {
+          var j = 0;
+          var p = 0;
+		  var ind, k;
+          var c, c1;
+          var steps = "";
+          c = -5000;
+          while(j<values.length)
+          {
+            c1 = c;
+            c = values[j];
+            
+            imageData.data[p*4 + 0] = ((c & 0xf800) >> 11) << 3;
+            imageData.data[p*4 + 1] = ((c & 0x07e0) >> 5 ) << 2; 
+            imageData.data[p*4 + 2] = ((c & 0x001f) >> 0 ) << 3;
+            imageData.data[p*4 + 3] = 255;
+            steps += c.toString(16)+"(N)";
+            p++;
+            j++;
+              
+            if(c1 == c)
+            {
+              do
+              {
+                for(h=0;h<(values[j]>>8);h++)
+                {
+                  imageData.data[p*4 + 0] = ((c & 0xf800) >> 11) << 3;
+                  imageData.data[p*4 + 1] = ((c & 0x07e0) >> 5 ) << 2; 
+                  imageData.data[p*4 + 2] = ((c & 0x001f) >> 0 ) << 3;
+                  imageData.data[p*4 + 3] = 255;
+                  p++;
+                  steps += c.toString(16)+"(E)";
+                }
+              } while((values[j++] & 0x00ff) == 0xfe);
+            }
+            else if((c & 0xe71c) == (c1 & 0xe71c))
+            {
+              while(1)
+              {
+                if((values[j] & 0xff00) == 0xff00) {j++;break;}
+                var exp = (values[j] & 0xff00) >> 8;
+                exp = ((exp & 0x60)<<6) | ((exp & 0x1c)<<3) | ((exp & 0x03)<<0);
+                c ^= exp;
+                imageData.data[p*4 + 0] = ((c & 0xf800) >> 11) << 3;
+                imageData.data[p*4 + 1] = ((c & 0x07e0) >> 5 ) << 2; 
+                imageData.data[p*4 + 2] = ((c & 0x001f) >> 0 ) << 3;
+                imageData.data[p*4 + 3] = 255;
+                p++;
+                steps += c.toString(16)+"(C)";
+              
+                if((values[j] & 0x00ff) == 0x00ff) {j++;break;}
+                var exp = values[j] & 0x00ff;
+                exp = ((exp & 0x60)<<6) | ((exp & 0x1c)<<3) | ((exp & 0x03)<<0);
+                c ^= exp;
+                imageData.data[p*4 + 0] = ((c & 0xf800) >> 11) << 3;
+                imageData.data[p*4 + 1] = ((c & 0x07e0) >> 5 ) << 2; 
+                imageData.data[p*4 + 2] = ((c & 0x001f) >> 0 ) << 3;
+                imageData.data[p*4 + 3] = 255;
+                p++;
+                steps += c.toString(16)+"(C)";
+                
+                if(j++>values.length) break;
+              }
+            }
+          }
+        }
+        else
+        {
+		  
+          for(j=0;j<values.length;j++)
+          {
+//var mycolors = [0xFF000000, 0xFFFFFFFF, 0xFFFFFF00, 0xFF7BC6E6];            
+			 for (k=0;k<4;k++){
+			 
+			     ind = 0x03&(values[j] >> (3-k)*2);
+			 
+				 if (ind == 0) {
+					 imageData.data[j*16 +  k*4 + 0] = 0x00; //black
+					 imageData.data[j*16 +  k*4 + 1] = 0x00;
+					 imageData.data[j*16 +  k*4 + 2] = 0x00;
+					 imageData.data[j*16 +  k*4 + 3] = 255;
+				 } else if (ind == 1) {
+					 imageData.data[j*16 +  k*4 + 0] = 0xff; //white
+					 imageData.data[j*16 +  k*4 + 1] = 0xff;
+					 imageData.data[j*16 +  k*4 + 2] = 0xff;
+					 imageData.data[j*16 +  k*4 + 3] = 255;
+				 } else if (ind == 2) {
+					 imageData.data[j*16 +  k*4 + 0] = 0xff; //yellow
+					 imageData.data[j*16 +  k*4 + 1] = 0xff;
+					 imageData.data[j*16 +  k*4 + 2] = 0x00;
+					 imageData.data[j*16 +  k*4 + 3] = 255;
+				 } else {
+					 imageData.data[j*16 +  k*4 + 0] = 0x7b; //lt blue
+					 imageData.data[j*16 +  k*4 + 1] = 0xc6;
+					 imageData.data[j*16 +  k*4 + 2] = 0xe6;
+					 imageData.data[j*16 +  k*4 + 3] = 255;
+				 }
+			 
+			 }
+
+//            imageData.data[j*4 + 0] = ((values[j] & 0xf800) >> 11) << 3;
+//            imageData.data[j*4 + 1] = ((values[j] & 0x07e0) >> 5 ) << 2; 
+//            imageData.data[j*4 + 2] = ((values[j] & 0x001f) >> 0 ) << 3;
+//            imageData.data[j*4 + 3] = 255;
+          }
+        }
+        
+        context.putImageData(imageData, 0, 0);
+        //canvas.style.borderStyle = "ridge";
+        //canvas.style.borderWidth = "2px";
+        //canvas.style.borderColor = "green";
+        div2.innerHTML = "";
+        div2.appendChild(canvas);
+        isArduinoSketch = false;
+      }
+      
+      function showArduinoSketch(withHTML = true)
+      {
+        var div2    = document.getElementById('img_array');
+        var divHTML = "";
+        divHTML += `
+        void drawCompressedImage(int x, int y, int w, int h, const uint16_t *pic, uint16_t arraySize)
+        {
+          int lines = 4096 / w;
+          int yOffset = 0;
+          uint16_t _buffer[lines * w];
+          uint16_t j = 0;
+          uint16_t p = 0;
+          uint16_t c, c1;
+          c = ~pic[0];
+        
+          auto addPixel = [&](const uint16_t &color) { _buffer[p++] = color; if(p >= lines * w) {tft.writeRect(x, yOffset+y, w, lines, _buffer); yOffset += lines; p = 0;} };
+          auto changedBits = [](const uint16_t &value) { return ((value & 0x60)<<6) | ((value & 0x1c)<<3) | ((value & 0x03)<<0); };
+        
+          while(j < arraySize) {
+            c1 = c;
+            c = pic[j++];
+        
+            addPixel(c);
+              
+            if(c1 == c) {
+              do {
+                for(h=0;h<(pic[j]>>8);h++) 
+                  addPixel(c);
+              } while((pic[j++] & 0x00ff) == 0xfe);
+            }
+            else if((c & 0xe71c) == (c1 & 0xe71c)) {
+              while(1) {
+                if((pic[j] & 0xff00) == 0xff00) {j++;break;}
+                c ^= changedBits((pic[j] & 0xff00) >> 8);
+                addPixel(c);
+              
+                if((pic[j] & 0x00ff) == 0x00ff) {j++;break;}
+                c ^= changedBits(pic[j] & 0x00ff);
+                addPixel(c);
+                
+                if(++j >= arraySize) break;
+              }
+            }
+          }
+          if(p>0)
+            tft.writeRect(x, yOffset+y, w, p/w, _buffer); 
+        }
+        `;
+        
+        if(withHTML)
+        {
+          divHTML = divHTML.replace(/\n        /g, "<br>");
+        }
+        else
+        {
+          divHTML = divHTML.replace(/\n        /g, "\n");
+        }
+        div2.innerHTML = "<pre>" + divHTML + "</pre>";
+        isArduinoSketch = true;
+      }
+      
+      function saveFile()
+      {
+        if(!originalFile || !originalFile.name) return;
+        var data = document.getElementById('img_array').innerText;
+        if(data.length < 100) return;
+        var blobObject = new Blob([data], {type:'text/plain'}); 
+        var filename = originalFile.name.substring(0, originalFile.name.indexOf(".")) + ".c";
+        if(isArduinoSketch) filename = "tft_function.ino";
+        if(window.navigator.msSaveBlob)
+        {
+          window.navigator.msSaveBlob(blobObject, filename);
+        }
+        else
+        {
+          var a = document.createElement("a");
+          a.setAttribute("href", URL.createObjectURL(blobObject));
+          a.setAttribute("download", filename);
+          if (document.createEvent) 
+          {
+            var event = document.createEvent('MouseEvents');
+            event.initEvent('click', true, true);
+            a.dispatchEvent(event);
+          }
+          else 
+          {
+            a.click();
+          }
+        }
+           
+      }
+      </script>
+
+  </head>
+  <body style="background-color:#AAAAAA;text-align:center;margin:0px;">
+    <h2>Image Converter to ILI9341 2-bpp Color Format Byte Array for<br><a href="https://blog.squix.org/category/esp8266-weather-station">Squix78' Weather Station Color Project</a></h2>
+    <div style="display:inline-table;vertical-align:top;width:400px;height:271px;">
+      <a href="http://www.petrucci.ch/arduino/?page=tft" style="color:darkred;"><i>Based on Adriano Petrucci' © Converter</i></a><br><br>
+	  <center><img src="" style="height:320px;width:240px;vertical-align:top;margin-top:7px;" id="preview" alt=" "></center><br>
+	  <input id="filebase64" onchange="previewFile()" type="file"><br>
+   
+		  <br>
+		 	<div id="slides" oninput="slidesproc();">
+  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#000000;color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thblack" style="width:90%;"></div>
+  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thwhite" style="width:90%;"></div> 
+    < yellow is outside of two slide positions ><div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFF00;"><input type="range" min="1" max="100" value="36" id="thy" style="width:90%;"></div> 
+  <div style="background-image:url(&quot;color.png&quot;);background-repeat:no-repeat;background-position:center;background-size:90%;"><br></div> 
+  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#7BC6E6;"><input type="range" min="1" max="100" value="78" id="thb" style="width:90%;;"></div> 
+  blue is [between] two slide positions<br><br>
+ 
+ <span id="demo">Default: 50:50:36:78</span>
+            </div><br> 
+	  
+      <div id="options" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:green;display:none;">
+
+        <input id="compress" type="checkbox" hidden><!--Compress image*-->
+        
+        <table style="width:100%;">
+          <tbody><tr><td colspan="2">
+            <input value="Convert and Preview" onclick="createArray();" type="button">
+          </td></tr>
+		  
+		  <tr>
+            <td><input value="Reset Color Settings" onclick="slidesinit();" type="button"></td>
+          </tr>
+		  
+<!--
+          <tr>
+            <td><input id="image565" value="Preview converted to 4 colors >>" onclick="newimage();" style="float:right;display:none;" type="button"></td>
+          </tr>
+-->
+        </tbody></table>
+<!--
+         * You can save 30% on size, but will loose 30% in time to draw it. Copy <a href="javascript:showArduinoSketch()">this code</a> to your Arduino sketch.
+-->
+		 </div>
+      <br>
+    </div>
+	
+    <div style="display:inline-table;overflow:hidden;vertical-align:top;text-align:left;width:271px;height:443px;background-image:url(&quot;ili9341.png&quot;);background-repeat:no-repeat;background-position:0 0;">
+      <div id="img_array2" style="display:inline-table;overflow:hidden;vertical-align:top;text-align:left;height:320px;width:240px;margin-left:17px;margin-top:46px;"></div>
+    </div>
+
+    <br>
+    <div style="display:inline-table;text-align:left;">
+      <table style="border-style:ridge;border-color:darkblue;border-radius:10px;margin:0 auto;color:darkblue;background-color:#eeeeff;">
+        <tbody><tr>
+          <td><img src="info.png" style="height:64px;"></td>
+          <td><span id="img_info">Image info:</span></td>
+          <td style="width:120px;"><input value="select code" onclick="selectText();" type="button"><br><div id="info_code" style="font-size:80%;opacity:1;"></div></td>
+          <td style="width:60px;"><img src="save.png" style="cursor:pointer;height:48px;" onclick="saveFile()"></td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <div id="img_array" style="
+                    width:70vw;
+                    min-width:400px;
+                    height:300px;
+                    font-size:10px;
+                    font-family: &quot;Lucida Console&quot;;
+                    white-space:nowrap;
+                    overflow:scroll;
+                    color:darkgrey;
+                    background-color:#f5f5ff;
+                    ">
+              
+            </div>
+          </td>
+        </tr>
+      </tbody></table>
+    </div>
+  
+</body></html>
