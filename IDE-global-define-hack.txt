@@ -1,0 +1,11 @@
+# This hack adds a sub menu to Arduino IDE Boards to override extra -D flags
+# An equivalent of adding custom #define globally to all compiled units
+# Add fillowing lines to the section for your board, example d1_mini in file boards.txt 
+# %userprofile%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.3.0\boards.txt
+
+menu.Dflag=Extra -Dflags
+d1_mini.menu.Dflag.Default=Default
+#d1_mini.menu.Dflag.Default.build.extra_flags=-DESP8266
+
+d1_mini.menu.Dflag.NIGHTICONS=NIGHTICONS
+d1_mini.menu.Dflag.NIGHTICONS.build.extra_flags=-DESP8266 -DNIGHTICONS

@@ -1,5 +1,6 @@
 // Until/if merge to squix87 branch occurs, use https://github.com/lorol/esp8266-weather-station  replacement library and 
 // uncomment #define NIGHTICONS in WundergroundConditions.h and WundergroundForecast.h
+// or see IDE-global-define-hack.txt
 
 const char SquixLogo[] PROGMEM = {
   0x01, // Version: 1

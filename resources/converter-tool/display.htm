@@ -529,51 +529,60 @@
       
       function showArduinoSketch(withHTML = true)
       {
-        var div2    = document.getElementById('img_array');
+        var div2 = document.getElementById('img_array');
         var divHTML = "";
         divHTML += `
-        void drawCompressedImage(int x, int y, int w, int h, const uint16_t *pic, uint16_t arraySize)
-        {
-          int lines = 4096 / w;
-          int yOffset = 0;
-          uint16_t _buffer[lines * w];
-          uint16_t j = 0;
-          uint16_t p = 0;
-          uint16_t c, c1;
-          c = ~pic[0];
-        
-          auto addPixel = [&](const uint16_t &color) { _buffer[p++] = color; if(p >= lines * w) {tft.writeRect(x, yOffset+y, w, lines, _buffer); yOffset += lines; p = 0;} };
-          auto changedBits = [](const uint16_t &value) { return ((value & 0x60)<<6) | ((value & 0x1c)<<3) | ((value & 0x03)<<0); };
-        
-          while(j < arraySize) {
-            c1 = c;
-            c = pic[j++];
-        
-            addPixel(c);
-              
-            if(c1 == c) {
-              do {
-                for(h=0;h<(pic[j]>>8);h++) 
-                  addPixel(c);
-              } while((pic[j++] & 0x00ff) == 0xfe);
-            }
-            else if((c & 0xe71c) == (c1 & 0xe71c)) {
-              while(1) {
-                if((pic[j] & 0xff00) == 0xff00) {j++;break;}
-                c ^= changedBits((pic[j] & 0xff00) >> 8);
-                addPixel(c);
-              
-                if((pic[j] & 0x00ff) == 0x00ff) {j++;break;}
-                c ^= changedBits(pic[j] & 0x00ff);
-                addPixel(c);
-                
-                if(++j >= arraySize) break;
-              }
-            }
-          }
-          if(p>0)
-            tft.writeRect(x, yOffset+y, w, p/w, _buffer); 
-        }
+/*
+MiniGrafx library: https://github.com/squix78/minigrafx 
+Quick Start: https://github.com/squix78/minigrafx/blob/master/Introduction.md
+Display array by:  void drawPalettedBitmapFromPgm(uint16_t x, uint16_t y, const char *palBmp);
+*/
+
+#include "MiniGrafx.h" // General graphic library
+#include "ILI9341_SPI.h" // Hardware-specific library
+
+//Generate and include arrays for each picture by the tool 
+//#include "mypicture1.h"
+const char mypicture1[] PROGMEM={
+  0x01, // Version: 1
+  0x02, // BitDepth: 2
+  0x00, 0x62, // Width: 98
+  0x00, 0x64, // Height: 100
+  0x00, .... // array bytes
+};
+
+//Define the pins of the display which can be freely chosen:
+#define TFT_DC D2
+#define TFT_CS D1
+#define TFT_LED D8
+
+//Define the colors usable in the paletted 16 color frame buffer
+uint16_t palette[] = {ILI9341_BLACK, // 0
+                      ILI9341_WHITE, // 1
+                      ILI9341_YELLOW, // 2
+                      0x7E3C }; //3
+
+// Limited to 4 colors due to memory constraints
+int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
+
+// Initialize the driver
+ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
+MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
+
+//In setup() method make sure that the background light will be turned on:
+pinMode(TFT_LED, OUTPUT);
+digitalWrite(TFT_LED, HIGH);
+
+//Initialize
+gfx.init();
+gfx.fillBuffer(0);
+gfx.commit();
+
+//In loop() - display mypicture1 at x=10 y=10 
+//... 
+gfx.drawPalettedBitmapFromPgm(10,10, mypicture1);
+//...
+gfx.commit();
         `;
         
         if(withHTML)
@@ -594,7 +603,7 @@
         var data = document.getElementById('img_array').innerText;
         if(data.length < 100) return;
         var blobObject = new Blob([data], {type:'text/plain'}); 
-        var filename = originalFile.name.substring(0, originalFile.name.indexOf(".")) + ".c";
+        var filename = originalFile.name.substring(0, originalFile.name.indexOf(".")) + ".h";
         if(isArduinoSketch) filename = "tft_function.ino";
         if(window.navigator.msSaveBlob)
         {
@@ -659,9 +668,7 @@
           </tr>
 -->
         </tbody></table>
-<!--
-         * You can save 30% on size, but will loose 30% in time to draw it. Copy <a href="javascript:showArduinoSketch()">this code</a> to your Arduino sketch.
--->
+         Here is <a href="javascript:showArduinoSketch()">reference code</a> for generic usage in your ESP8266 Arduino sketch.
 		 </div>
       <br>
     </div>
