@@ -30,8 +30,7 @@
 	  
 	  function docolor1() {
 		var x = document.getElementById("color1").value;
-		var z = parseInt(x, 16);
-		var y = x.match(/[0-9A-Fa-f]{2}/g);
+		var y = x.match(/[^#].{1}/g); //(/[0-9A-Fa-f]{2}/g); 
 		ra = parseInt(y[0], 16);
 		ga = parseInt(y[1], 16);
 		ba = parseInt(y[2], 16);
@@ -39,13 +38,12 @@
 		while (rgb565.length<4) rgb565 = "0" + rgb565;
 		c565a = "0x" + rgb565;
 		document.getElementById("thy565").innerHTML = c565a;
-		document.getElementById("thydiv").style.backgroundColor = '#' + x;
+		document.getElementById("thydiv").style.backgroundColor = x;
 	  }
 	  
 	  function docolor2() {
 		var x = document.getElementById("color2").value;
-		var z = parseInt(x, 16);
-		var y = x.match(/[0-9A-Fa-f]{2}/g);
+		var y = x.match(/[^#].{1}/g); //(/[0-9A-Fa-f]{2}/g);  
 		rb = parseInt(y[0], 16);
 		gb = parseInt(y[1], 16);
 		bb = parseInt(y[2], 16);
@@ -53,7 +51,7 @@
 		while (rgb565.length<4) rgb565 = "0" + rgb565;
 		c565b = "0x" + rgb565;
 		document.getElementById("thb565").innerHTML = c565b;
-		document.getElementById("thbdiv").style.backgroundColor = '#' + x;
+		document.getElementById("thbdiv").style.backgroundColor = x;
 	  }
 	  
 	  function slidesproc(){
@@ -62,7 +60,7 @@
 		var thy = document.getElementById("thy");
 		var thb = document.getElementById("thb");
 		var output = document.getElementById("demo");
-		output.innerHTML = 'Modified: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;			
+		output.innerHTML = 'Modified slides: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;			
 	  }
 	  
 	  function slidesinit(){
@@ -75,7 +73,7 @@
 		thwhite.value = 50;
 		thy.value = 36;
 		thb.value = 78;
-		output.innerHTML = 'Default: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;		
+		output.innerHTML = 'Default slides: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;		
 	  }
 	  
 	  function rgbTo4(r, g, b) {
@@ -669,7 +667,7 @@ gfx.commit();
       </script>
 
   </head>
-  <body style="background-color:#AAAAAA;text-align:center;margin:0px;">
+  <body style="background-color:#AAAAAA;text-align:center;margin:0px;" onload="slidesinit()">
     <h2>Image Converter to ILI9341 2-bpp Color Format Byte Array for<br><a href="https://blog.squix.org/category/esp8266-weather-station">Squix78' Weather Station Color Project</a></h2>
     <div style="display:inline-table;vertical-align:top;width:400px;height:271px;">
       <a href="http://www.petrucci.ch/arduino/?page=tft" style="color:darkred;"><i>Based on Adriano Petrucci' © Converter</i></a><br><br>
@@ -677,16 +675,16 @@ gfx.commit();
 	  <input id="filebase64" onchange="previewFile()" type="file"><br>
    
 		  
-		 	<div id="slides" oninput="slidesproc();">color 0: #000000 (RGB565 0x0000) black
+		 	<div id="slides" oninput="slidesproc();">Color 0: black (RGB565 0x0000)
   <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#000000;color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thblack" style="width:90%;"></div>
-  color 1: #FFFFFF (0xFFFF) white
+  Color 1: white (RGB565 0xFFFF)
   <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thwhite" style="width:90%;"></div> 
-  color 2: #<input type="text" value="FFFF00" autocomplete=off id="color1" size=6 oninput="docolor1()"> (<span id="thy565">0xFFE0</span>) outside slides<div id="thydiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFF00;"><input type="range" min="1" max="100" value="36" id="thy" style="width:90%;"></div> 
+  Color 2: pickup <input type="color" value="#FFFF00" autocomplete=off id="color1" size=6 oninput="docolor1()"> (<span id="thy565">0xFFE0</span>) outside slides<div id="thydiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFF00;"><input type="range" min="1" max="100" value="36" id="thy" style="width:90%;"></div> 
   <div style="background-image:url(&quot;color.png&quot;);background-repeat:no-repeat;background-position:center;background-size:90%;"><br></div> 
   <div id="thbdiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#7BC6E6;"><input type="range" min="1" max="100" value="78" id="thb" style="width:90%;;"></div> 
-  color 3: #<input type="text" value="7BC6E6" autocomplete=off id="color2" size=6 oninput="docolor2()"> (<span id="thb565">0x7E3C</span>) between slides<br>
+  Color 3: pickup <input type="color" value="#7BC6E6" autocomplete=off id="color2" size=6 oninput="docolor2()"> (<span id="thb565">0x7E3C</span>) between slides<br>
  
- <span id="demo">Default: 50:50:36:78</span>
+ <span id="demo">Default slides: 50:50:36:78</span>
             </div> 
 	  
       <div id="options" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:green;display:none;">
@@ -695,7 +693,7 @@ gfx.commit();
         
         <table style="width:100%;">
           <tbody><tr><td colspan="2">
-            <input value="Reset Sliders" onclick="slidesinit();" type="button">  <input value="Convert and Preview" onclick="createArray();" type="button" style="font-weight:bold;">
+            <input value="Reset Slides" onclick="slidesinit();" type="button">  <input value="Convert and Preview" onclick="createArray();" type="button" style="font-weight:bold;">
           </td></tr>
 		  	  
 <!--
@@ -704,7 +702,7 @@ gfx.commit();
           </tr>
 -->
         </tbody></table>
-         Here is <a href="javascript:showArduinoSketch()">reference code</a> for generic usage in your ESP8266 Arduino sketch.
+         Here is <a href="javascript:showArduinoSketch()">reference code</a> for ESP8266 Arduino sketch.
 		 </div>
       <br>
     </div>
