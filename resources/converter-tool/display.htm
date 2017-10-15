@@ -76,6 +76,23 @@
 		output.innerHTML = 'Default slides: ' + thblack.value + ':' + thwhite.value + ':' + thy.value + ':' + thb.value;		
 	  }
 	  
+	  function colorsinit(){
+		c565a = "0xFFE0";
+		c565b = "0x7E3C";
+		ra = 0xff;
+		ga = 0xff;
+		ba = 0x00;
+		rb = 0x7b;
+		gb = 0xc6;
+		bb = 0xe6;
+		document.getElementById("color1").value = "#FFFF00";
+		document.getElementById("color2").value = "#7BC6E6";
+		document.getElementById("thy565").innerHTML = c565a;
+		document.getElementById("thydiv").style.backgroundColor = "#FFFF00";
+		document.getElementById("thb565").innerHTML = c565b;
+		document.getElementById("thbdiv").style.backgroundColor = "#7BC6E6";
+	  }
+	  
 	  function rgbTo4(r, g, b) {
 	  	var thblack = document.getElementById("thblack");
 		var thwhite = document.getElementById("thwhite");
@@ -675,13 +692,13 @@ gfx.commit();
 	  <input id="filebase64" onchange="previewFile()" type="file"><br>
    
 		  
-		 	<div id="slides" oninput="slidesproc();">Color 0: black (RGB565 0x0000)
+		 	<div id="slides">Color 0: black (RGB565 0x0000)
   <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#000000;color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thblack" style="width:90%;"></div>
   Color 1: white (RGB565 0xFFFF)
   <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thwhite" style="width:90%;"></div> 
-  Color 2: pickup <input type="color" value="#FFFF00" autocomplete=off id="color1" size=6 oninput="docolor1()"> (<span id="thy565">0xFFE0</span>) outside slides<div id="thydiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFF00;"><input type="range" min="1" max="100" value="36" id="thy" style="width:90%;"></div> 
+  Color 2: pickup <input type="color" value="#FFFF00" autocomplete=off id="color1" size=6 oninput="docolor1()"> (<span id="thy565">0xFFE0</span>) outside slides<div id="thydiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFF00;"><input type="range" oninput="slidesproc()" min="1" max="100" value="36" id="thy" style="width:90%;"></div> 
   <div style="background-image:url(&quot;color.png&quot;);background-repeat:no-repeat;background-position:center;background-size:90%;"><br></div> 
-  <div id="thbdiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#7BC6E6;"><input type="range" min="1" max="100" value="78" id="thb" style="width:90%;;"></div> 
+  <div id="thbdiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#7BC6E6;"><input type="range" oninput="slidesproc()" min="1" max="100" value="78" id="thb" style="width:90%;"></div> 
   Color 3: pickup <input type="color" value="#7BC6E6" autocomplete=off id="color2" size=6 oninput="docolor2()"> (<span id="thb565">0x7E3C</span>) between slides<br>
  
  <span id="demo">Default slides: 50:50:36:78</span>
@@ -693,7 +710,7 @@ gfx.commit();
         
         <table style="width:100%;">
           <tbody><tr><td colspan="2">
-            <input value="Reset Slides" onclick="slidesinit();" type="button">  <input value="Convert and Preview" onclick="createArray();" type="button" style="font-weight:bold;">
+            <input value="Reset Colors" onclick="colorsinit();" type="button"> <input value="Reset Slides" onclick="slidesinit();" type="button"> <input value="Convert and Preview" onclick="createArray();" type="button" style="font-weight:bold;">
           </td></tr>
 		  	  
 <!--
