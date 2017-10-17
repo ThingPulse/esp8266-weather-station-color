@@ -693,9 +693,9 @@ gfx.commit();
    
 		  
 		 	<div id="slides">Color 0: black (RGB565 0x0000)
-  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#000000;color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thblack" style="width:90%;"></div>
+  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#000000;color:#FFFFFF;"><input type="range" oninput="slidesproc()" min="1" max="100" value="50" id="thblack" style="width:90%;"></div>
   Color 1: white (RGB565 0xFFFF)
-  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFFFF;"><input type="range" min="1" max="100" value="50" id="thwhite" style="width:90%;"></div> 
+  <div style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFFFF;"><input type="range" oninput="slidesproc()" min="1" max="100" value="50" id="thwhite" style="width:90%;"></div> 
   Color 2: pickup <input type="color" value="#FFFF00" autocomplete=off id="color1" size=6 oninput="docolor1()"> (<span id="thy565">0xFFE0</span>) outside slides<div id="thydiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#FFFF00;"><input type="range" oninput="slidesproc()" min="1" max="100" value="36" id="thy" style="width:90%;"></div> 
   <div style="background-image:url(&quot;color.png&quot;);background-repeat:no-repeat;background-position:center;background-size:90%;"><br></div> 
   <div id="thbdiv" style="border-style:ridge;border-color:gold;border-radius:5px;border-width:2px;background-color:#7BC6E6;"><input type="range" oninput="slidesproc()" min="1" max="100" value="78" id="thb" style="width:90%;"></div> 

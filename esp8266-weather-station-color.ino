@@ -120,7 +120,6 @@ long lastDownloadUpdate = millis();
 String moonAgeImage = "";
 uint16_t screen = 0;
 long timerPress;
-bool canBtnPress;
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
@@ -198,12 +197,8 @@ void setup() {
   // update the weather information
   updateData();
   timerPress = millis();
-  canBtnPress = true;
-
 }
 
-long lastDrew = 0;
-bool btnClick;
 
 void loop() {
 
