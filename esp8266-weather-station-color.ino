@@ -51,8 +51,8 @@ See more at https://blog.squix.org
 
 #include "ArialRounded.h"
 #include "moonphases.h"
-#include "weathericons.h"
-
+//#include "weathericons.h"
+#include "weathericons2.h"
 
 #define MINI_BLACK 0
 #define MINI_WHITE 1
