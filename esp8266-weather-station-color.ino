@@ -27,6 +27,7 @@ See more at https://blog.squix.org
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
 
 #include <XPT2046_Touchscreen.h>
 #include "TouchControllerWS.h"
@@ -54,12 +55,15 @@ See more at https://blog.squix.org
 //#include "weathericons.h"
 #include "weathericons2.h"
 
+
 #define MINI_BLACK 0
 #define MINI_WHITE 1
 #define MINI_YELLOW 2
 #define MINI_BLUE 3
 
 #define MAX_FORECASTS 12
+
+//ADC_MODE(ADC_VCC);
 
 // defines the colors usable in the paletted 16 color frame buffer
 uint16_t palette[] = {ILI9341_BLACK, // 0
@@ -75,7 +79,8 @@ int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 bool scr_req = true;
 bool scr_stat = true;
 bool forced_update = false;
-//ADC_MODE(ADC_VCC);
+
+ESP8266WiFiMulti wifiMulti;
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
@@ -122,24 +127,17 @@ uint16_t screen = 0;
 long timerPress;
 
 void connectWifi() {
-  if (WiFi.status() == WL_CONNECTED) return;
-  int i = 0;
-  int j = 0;
-  bool wifi2 = false;
   
-  while (WiFi.status() != WL_CONNECTED) {
+  wifiMulti.addAP(WIFI_SSID, WIFI_PASS);
+  wifiMulti.addAP(WIFI_SSID2, WIFI_PASS2);
+  
+  if(wifiMulti.run() != WL_CONNECTED) return;
+  int i = 0;
+  
+  while (wifiMulti.run() != WL_CONNECTED) {
     delay(500);
     if (i>80) {
       i=0;
-      j++; 
-    }
-    if (j>20){
-       j=0;
-       wifi2 = !wifi2;
-       WiFi.mode(WIFI_OFF); 
-       WiFi.mode(WIFI_STA);
-       if (!wifi2) WiFi.begin(WIFI_SSID,WIFI_PASS);
-       else WiFi.begin(WIFI_SSID2,WIFI_PASS2);
     }
     drawProgress(i,"Connecting to WiFi");
     Serial.print(".");
@@ -197,8 +195,8 @@ void setup() {
   // update the weather information
   updateData();
   timerPress = millis();
-}
 
+}
 
 void loop() {
 
@@ -535,24 +533,27 @@ void drawWifiQuality() {
 
 void drawBattery() {
   uint8_t percentage = 100;
-  float power = analogRead(A0) * 49 / 10240.0;
-  if (power > 4.15) percentage = 100;
+  float power = analogRead(A0) * 49 / 10240.0;  //Use 5:1V scale divider, analogRead 0.0-1.0V to 10bit.
+  if ((power > 4.15)||(power < 1.0)) percentage = 100;
   else if (power < 3.7) percentage = 0;
-  else percentage = (power - 3.7) * 100 / (4.15-3.7);
-  
+  else percentage = (power - 3.7) * 100 / (4.15-3.7); // 100% to 0% Li
+
   gfx.setColor(MINI_WHITE);
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);  
-  if (power < 1.0) { // AC arrow symbol
-    percentage = 100;
-    gfx.drawLine(26,15,32,12); 
-    gfx.drawLine(32,12,32,18);
-    gfx.drawLine(32,18,38,15);
-  } else gfx.drawString(26, 9, String(percentage) + "%");
-  gfx.drawRect(1, 11, 18, 9);
-  gfx.drawLine(21,13,21,17);  
+  gfx.setTextAlignment(TEXT_ALIGN_LEFT); 
+  gfx.drawString(26, 9, String(percentage) + "%");
+  gfx.drawRect( 1,11,18, 9); // Battery outline
+  gfx.drawLine(21,13,21,17);  // Battery plus
   gfx.drawLine(22,13,22,17);  
+  
   gfx.setColor(MINI_BLUE); // Battery inside
   gfx.fillRect(3, 13, 15 * percentage / 100, 5);
+  
+  if (power < 1.0) { // or charging pin == high  (later)
+    gfx.setColor(MINI_WHITE); // AC symbol as black arrow inside blue fill
+    gfx.drawLine( 6,15,10,13); 
+    gfx.drawLine(10,13,10,17);
+    gfx.drawLine(10,17,14,15);
+  }
 }
 
 void drawForecastTable(uint8_t start) {
