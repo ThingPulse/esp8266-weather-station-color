@@ -654,10 +654,31 @@ gfx.commit();
       function saveFile()
       {
         if(!originalFile || !originalFile.name) return;
+		var filename = originalFile.name.substring(0, originalFile.name.indexOf("."));
         var data = document.getElementById('img_array').innerText;
-        if(data.length < 100) return;
+        if(data.length < 10) return;
+		
+		if (document.getElementById('bin').checked) {
+		 // clean comments
+		 data = data.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
+		 // clean spaces and new lines
+		 data = data.replace(/\s+/g, '').trim();
+		 // take the array
+		 data = data.split('{').pop().split('}').shift();
+		 // remove the last comma
+		 if (data.slice(-1) == ",") data = data.slice(0,-1);
+		 data = data.split(',');
+		 for (let a in data ) {
+		  data[a] = parseInt(data[a], 16);
+		 }
+		 data = new Uint8Array(data);
+		 filename += ".bin";  
+		} else {
+		  filename += ".h";
+		}
+
         var blobObject = new Blob([data], {type:'text/plain'}); 
-        var filename = originalFile.name.substring(0, originalFile.name.indexOf(".")) + ".h";
+        
         if(isArduinoSketch) filename = "tft_function.ino";
         if(window.navigator.msSaveBlob)
         {
@@ -735,7 +756,7 @@ gfx.commit();
           <td><img src="info.png" style="height:64px;"></td>
           <td><span id="img_info">Image info:</span></td>
           <td style="width:120px;"><input value="select code" onclick="selectText();" type="button"><br><div id="info_code" style="font-size:80%;opacity:1;"></div></td>
-          <td style="width:60px;"><img src="save.png" style="cursor:pointer;height:48px;" onclick="saveFile()"></td>
+          <td style="width:150px;"><img src="save.png" style="cursor:pointer;height:48px;" onclick="saveFile()"><input type="checkbox" id="bin"> binary</td>
         </tr>
         <tr>
           <td colspan="4">
