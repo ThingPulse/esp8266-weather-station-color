@@ -13,7 +13,7 @@ By buying the kit from me you are supporting future development. Thank you!
 
 [![Squix ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4)
 
-2. AZSMZ TFT
+2. AZSMZ TFT & AZSMZ TFT TOUCH
 
 ![AZSMZ TFT](resources/AZSMZ-11.jpg)
 
