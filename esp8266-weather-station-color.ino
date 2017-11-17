@@ -31,6 +31,57 @@ See more at https://blog.squix.org
 #ifdef HAVE_TOUCHPAD
   #include <XPT2046_Touchscreen.h>
   #include "TouchControllerWS.h"
+
+  ADC_MODE(ADC_VCC);
+
+  #define CFG_POWER  0b10100111
+  #define CFG_TEMP0  0b10000111
+  #define CFG_TEMP1  0b11110111
+  #define CFG_AUX    0b11100111
+  #define CFG_IRQ    0b11010000
+
+  void XPT2046_EnableIrq() {
+    SPI.beginTransaction(SPISettings(2500000, MSBFIRST, SPI_MODE0));
+    digitalWrite(TOUCH_CS, 0);
+    const uint8_t buf[4] = { CFG_IRQ, 0x00, 0x00, 0x00 };
+    SPI.writeBytes((uint8_t *) &buf[0], 3);
+    digitalWrite(TOUCH_CS, 1);
+    SPI.endTransaction();
+  }
+
+  uint32_t XPT2046_ReadRaw(uint8_t c) {
+    uint32_t p = 0;
+    uint8_t i = 0;  
+    digitalWrite(TFT_CS, HIGH);    
+    SPI.beginTransaction(SPISettings(2500000, MSBFIRST, SPI_MODE0));
+    digitalWrite(TOUCH_CS, 0);
+    SPI.transfer16(c) >> 3;
+    for(; i < 10; i++) {
+      delay(2);
+      p += SPI.transfer16(c) >> 3;
+    }
+    p /= i;
+
+    XPT2046_EnableIrq();
+    digitalWrite(TOUCH_CS, 1);
+    SPI.endTransaction();
+    return p;
+  }
+
+int readNTC() {
+  float average = (4096 * 1.0 * serialResistance / XPT2046_ReadRaw(CFG_AUX)) - serialResistance;
+  Serial.print("NTC R=");  
+  Serial.println(average);  
+  float steinhart;
+  steinhart = average * 1.0 / nominalResistance;     // (R/Ro)
+  steinhart = log(steinhart);                  // ln(R/Ro)
+  steinhart /= bCoefficient;                   // 1/B * ln(R/Ro)
+  steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
+  steinhart = 1.0 / steinhart;                 // Invert
+  steinhart -= 273.15;                         // convert to C
+  return (int)(steinhart * 10); 
+}  
+    
 #endif 
 
 /***
@@ -87,7 +138,6 @@ Carousel carousel(&gfx, 0, 0, 240, 100);
 
   void calibrationCallback(int16_t x, int16_t y);
   CalibrationCallback calibration = &calibrationCallback;
-  
 #endif 
 
 WGConditions conditions;
@@ -132,8 +182,8 @@ void connectWifi() {
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    if (i>80) i=0;
-    drawProgress(i,"Connecting to WiFi");
+    if (i>200) break;
+    drawProgress(i % 80 + 10,"Connecting to WiFi");
     i+=10;
     Serial.print(".");
   }
@@ -141,6 +191,7 @@ void connectWifi() {
 
 void setup() {
   Serial.begin(115200);
+  WiFi.disconnect();
 
   // The LED pin needs to set HIGH
   // Use this pin to save energy
@@ -149,7 +200,10 @@ void setup() {
   pinMode(TFT_LED, OUTPUT);
 
   #ifdef TFT_LED_LOW
-    digitalWrite(TFT_LED, LOW);    // LOW to Turn on;
+    digitalWrite(TFT_LED, LOW);
+    delay(50);    
+    digitalWrite(TFT_LED, HIGH);  
+    digitalWrite(TFT_LED, LOW);
   #else
     digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
   #endif
@@ -163,6 +217,7 @@ void setup() {
   SPIFFS.begin();
   //SPIFFS.remove("/calibration.txt");
   boolean isCalibrationAvailable = touchController.loadCalibration();
+
   if (!isCalibrationAvailable) {
     Serial.println("Calibration not available");
     touchController.startCalibration(&calibration);
@@ -176,7 +231,8 @@ void setup() {
       yield();
     }
     touchController.saveCalibration();
-  }
+  } 
+  
 #endif  
 
   carousel.setFrames(frames, frameCount);
@@ -191,10 +247,10 @@ void setup() {
 long lastDrew = 0;
 bool btnClick;
 
+float temperature = 0.0;
+
 #ifdef LM75
   #include <Wire.h>
-  float temperature = 0.0;
-
   float lm75() {
     unsigned int data[2];
 
@@ -243,27 +299,39 @@ bool btnClick;
   }
 #endif
 
+float power;
+
 void loop() {
+ 
 #ifdef HAVE_TOUCHPAD
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
-    if (p.y < 80) {
-      IS_STYLE_12HR = !IS_STYLE_12HR;
-    } else {
-      screen = (screen + 1) % screenCount;
+    if (screen==screenCount) screen=0;
+    else {
+      if (p.y < 80) {
+        IS_STYLE_12HR = !IS_STYLE_12HR;
+      } else {
+          screen = (screen + 1) % screenCount;
+      }
     }
+    timerPress = millis();            
   }
-#else
+#endif  
+
+#ifdef BTN_1
+  digitalWrite(TFT_CS, HIGH);
+  digitalWrite(TOUCH_CS, HIGH);
+  digitalWrite(BTN_1, 0);
   pinMode(BTN_1, INPUT_PULLUP);
-  delay(5);
   int btnState = digitalRead(BTN_1);
-  
   if (btnState == LOW){
     if(canBtnPress){
       timerPress = millis();
       canBtnPress = false;
     } else {
-        if ((!btnClick) && ((millis() - timerPress)>1000)) {
+        if ((!btnClick) && ((millis() - timerPress)>3000)) {     // long press to pen init
+          SPIFFS.remove("/calibration.txt");
+          ESP.restart();          
           btnClick = true;
         } 
     }
@@ -271,10 +339,26 @@ void loop() {
     canBtnPress = true;
     btnClick = false;
     if ((millis() - timerPress)<800) {
-        screen = (screen + 1) % screenCount;        
+        if (screen==screenCount) screen=0;
+        else {
+          screen = (screen + 1) % screenCount;
+        }
     }
   } 
+  pinMode(BTN_1, OUTPUT);
 #endif  
+
+  #ifdef HAVE_TOUCHPAD
+    power = XPT2046_ReadRaw(CFG_POWER) * 2.5 * 4 / 4096;
+  #else
+    power = analogRead(A0) * 49 / 10240.0;
+  #endif
+
+  #ifdef NTC
+    temperature = readNTC()/10.0;
+    Serial.print("ntc:");
+    Serial.println(temperature);
+  #endif 
 
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
@@ -288,7 +372,7 @@ void loop() {
       // You can do some work here
       // Don't do stuff if you are below your
       // time budget.
-      delay(remainingTimeBudget);
+      delay(remainingTimeBudget);         
     }
     drawCurrentWeather();
     drawAstronomy();
@@ -305,14 +389,7 @@ void loop() {
   }
   gfx.commit();
 
-  // Check if we should update weather information
-  if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
-      updateData();
-      lastDownloadUpdate = millis();
-  }
-
   if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
-    #ifdef DEEP_SLEEP
       drawProgress(25,"Going to Sleep!");
       delay(1000);
       drawProgress(50,"Going to Sleep!");
@@ -321,11 +398,20 @@ void loop() {
       delay(1000);    
       drawProgress(100,"Going to Sleep!");
       // go to deepsleep for xx minutes or 0 = permanently
+      XPT2046_EnableIrq();
       ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
-    #else
+  }
+
+  if (SAVER_INTERVAL_SECS && millis() - timerPress >= SAVER_INTERVAL_SECS * 1000){ // after SAVER_INTERVAL_SECS go to saver
       screen = screenCount;
-    #endif             
-  }  
+  }
+
+  
+  // Check if we should update weather information
+  if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
+      updateData();
+      lastDownloadUpdate = millis();
+  } 
 }
 
 // Update the internet based information and update screen
@@ -381,6 +467,7 @@ void drawProgress(uint8_t percentage, String text) {
 }
 
 String time_prev;
+long timeSaver;
 
 // draws the clock
 void drawTime(bool saver) {
@@ -402,11 +489,13 @@ void drawTime(bool saver) {
     sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
   }
 
-  if (saver && !time_prev.equals(time_str)) {
+
+  if (saver && (!time_prev.equals(time_str) || (millis() - timeSaver > 1000))) {
     x = random(75,130);
     y = random(270);
     time_prev = time_str;
-  }
+    timeSaver = millis();    
+  } 
 
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setFont(ArialRoundedMTBold_14);
@@ -456,7 +545,11 @@ void drawCurrentWeather() {
     if (canBtnPress) temperature = lm75(); 
     String temp = temperature + degreeSign;
   #else
-    String temp = conditions.currentTemp + degreeSign;
+    #ifdef NTC
+      String temp = temperature + degreeSign;
+    #else
+      String temp = conditions.currentTemp + degreeSign;
+    #endif
   #endif
       
   gfx.drawString(220, 78, temp);
@@ -597,7 +690,6 @@ void drawWifiQuality() {
 
 void drawBattery() {
   uint8_t percentage = 100;
-  float power = analogRead(A0) * 49 / 10240.0;
   if (power > 4.15) percentage = 100;
   else if (power < 3.7) percentage = 0;
   else percentage = (power - 3.7) * 100 / (4.15-3.7);
@@ -777,4 +869,3 @@ const String getShortText(String iconText) {
 
   return "-";
 }
-
