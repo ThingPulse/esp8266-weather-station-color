@@ -5,10 +5,12 @@ ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
 ----
 
 ## Changes by Lorol
-* Added [converter-tool](https://rawgit.com/lorol/esp8266-weather-station-color/master/resources/converter-tool/display.htm) to generate C code from own pictures 
-* Fix for Forecast last entry wrong icon
-* Added night time icons
+* Added a [converter-tool](https://rawgit.com/lorol/esp8266-weather-station-color/master/resources/converter-tool/display.htm) to generate C code from own pictures. 
+* Fix for [last two wrong icon entries](https://github.com/squix78/esp8266-weather-station-color/issues/39) & added night time icons processing. 
+* These changes depend on [esp8266-weather-station](https://github.com/lorol/esp8266-weather-station) modification, too!
 * Fix of 00:00:00 clock after forecasts update
+
+The original README.md follows:
 
 ----
 ## Hardware Requirements
