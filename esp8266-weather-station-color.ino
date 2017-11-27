@@ -70,8 +70,8 @@ See more at https://blog.squix.org
 
 int readNTC() {
   float average = (4096 * 1.0 * serialResistance / XPT2046_ReadRaw(CFG_AUX)) - serialResistance;
-  Serial.print("NTC R=");  
-  Serial.println(average);  
+//  Serial.print("NTC R=");  
+//  Serial.println(average);  
   float steinhart;
   steinhart = average * 1.0 / nominalResistance;     // (R/Ro)
   steinhart = log(steinhart);                  // ln(R/Ro)
@@ -138,6 +138,22 @@ Carousel carousel(&gfx, 0, 0, 240, 100);
 
   void calibrationCallback(int16_t x, int16_t y);
   CalibrationCallback calibration = &calibrationCallback;
+
+  void touchCalibration() {
+    Serial.println("Touchpad calibration .....");
+    touchController.startCalibration(&calibration);
+    while (!touchController.isCalibrationFinished()) {
+      gfx.fillBuffer(0);
+      gfx.setColor(MINI_YELLOW);
+      gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+      gfx.drawString(120, 160, "Please calibrate\ntouch screen by\ntouch point");
+      touchController.continueCalibration();
+      gfx.commit();
+      yield();
+    }
+    touchController.saveCalibration();
+  }
+
 #endif 
 
 WGConditions conditions;
@@ -196,7 +212,6 @@ void setup() {
   // The LED pin needs to set HIGH
   // Use this pin to save energy
   // Turn on the background LED
-  Serial.println(TFT_LED);
   pinMode(TFT_LED, OUTPUT);
 
   #ifdef TFT_LED_LOW
@@ -217,20 +232,8 @@ void setup() {
   SPIFFS.begin();
   //SPIFFS.remove("/calibration.txt");
   boolean isCalibrationAvailable = touchController.loadCalibration();
-
   if (!isCalibrationAvailable) {
-    Serial.println("Calibration not available");
-    touchController.startCalibration(&calibration);
-    while (!touchController.isCalibrationFinished()) {
-      gfx.fillBuffer(0);
-      gfx.setColor(MINI_YELLOW);
-      gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-      gfx.drawString(120, 160, "Please calibrate\ntouch screen by\ntouch point");
-      touchController.continueCalibration();
-      gfx.commit();
-      yield();
-    }
-    touchController.saveCalibration();
+    touchCalibration();
   } 
   
 #endif  
@@ -245,7 +248,7 @@ void setup() {
 }
 
 long lastDrew = 0;
-bool btnClick;
+bool btnClick,btnLongClick;
 
 float temperature = 0.0;
 
@@ -323,16 +326,15 @@ void loop() {
   digitalWrite(TOUCH_CS, HIGH);
   digitalWrite(BTN_1, 0);
   pinMode(BTN_1, INPUT_PULLUP);
+  delay(1);
   int btnState = digitalRead(BTN_1);
   if (btnState == LOW){
     if(canBtnPress){
       timerPress = millis();
       canBtnPress = false;
     } else {
-        if ((!btnClick) && ((millis() - timerPress)>3000)) {     // long press to pen init
-          SPIFFS.remove("/calibration.txt");
-          ESP.restart();          
-          btnClick = true;
+        if ((!btnClick) && ((millis() - timerPress)>3000)) {     // long press to pen init       
+          btnLongClick = true;
         } 
     }
   }else if(!canBtnPress){
@@ -350,15 +352,16 @@ void loop() {
 
   #ifdef HAVE_TOUCHPAD
     power = XPT2046_ReadRaw(CFG_POWER) * 2.5 * 4 / 4096;
+    #ifdef NTC
+      temperature = readNTC()/10.0;
+    #endif 
+    if (btnLongClick) {
+      touchCalibration();
+      btnLongClick = false;
+    }
   #else
     power = analogRead(A0) * 49 / 10240.0;
   #endif
-
-  #ifdef NTC
-    temperature = readNTC()/10.0;
-    Serial.print("ntc:");
-    Serial.println(temperature);
-  #endif 
 
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
@@ -398,7 +401,9 @@ void loop() {
       delay(1000);    
       drawProgress(100,"Going to Sleep!");
       // go to deepsleep for xx minutes or 0 = permanently
-      XPT2046_EnableIrq();
+      #ifdef HAVE_TOUCHPAD      
+        XPT2046_EnableIrq();
+      #endif        
       ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
   }
 
@@ -541,15 +546,16 @@ void drawCurrentWeather() {
     degreeSign = "°C";
   }
 
+  String temp = conditions.currentTemp + degreeSign;
   #ifdef LM75
     if (canBtnPress) temperature = lm75(); 
-    String temp = temperature + degreeSign;
-  #else
-    #ifdef NTC
-      String temp = temperature + degreeSign;
-    #else
-      String temp = conditions.currentTemp + degreeSign;
-    #endif
+    temp = temperature + degreeSign;
+  #endif
+  
+  #ifdef HAVE_TOUCHPAD
+      #ifdef NTC
+        temp = (int)temperature + degreeSign;
+      #endif
   #endif
       
   gfx.drawString(220, 78, temp);
