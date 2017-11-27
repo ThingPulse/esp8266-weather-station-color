@@ -19,8 +19,9 @@ https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instruction
 
 ![AZSMZ TFT](resources/AZSMZ-11.jpg)
 
+
+The image below For AZSMZ TFT TOUCH Ver1.6 Ver1.61:
 ![AZSMZ TFT TOUCH](resources/AZSMZ-TFT-TOUCH-WIRE.jpg)
-For AZSMZ TFT TOUCH Ver1.6 Ver1.61
 
 ## Software Requirements/ Libraries
  * Mini Grafx by Daniel Eichhorn
