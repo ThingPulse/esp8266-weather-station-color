@@ -4,20 +4,12 @@ ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
 
 ## Hardware Requirements
 
-1. SQUIX
-
 This code is made for an 240x320 65K ILI9341 display with code running on an ESP8266.
 Since it was sometimes complicated to find the right parts I created a kit which contains all the parts including the connector PCB:
 https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4
 By buying the kit from me you are supporting future development. Thank you!
 
 [![Squix ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4)
-
-2. AZSMZ TFT
-
-cxandy created a nice adaptation of this code to run with the hardware from AZSMZ:
-https://github.com/cxandy/esp8266-weather-station-color
-
 
 
 ## Software Requirements/ Libraries
