@@ -27,6 +27,7 @@ See more at https://blog.squix.org
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
 
 #include <XPT2046_Touchscreen.h>
 #include "TouchControllerWS.h"
@@ -51,9 +52,8 @@ See more at https://blog.squix.org
 
 #include "ArialRounded.h"
 #include "moonphases.h"
-#include "weathericons.h"
-
-
+//#include "weathericons.h"
+#include "weathericons2.h"
 
 
 #define MINI_BLACK 0
@@ -63,26 +63,28 @@ See more at https://blog.squix.org
 
 #define MAX_FORECASTS 12
 
+//ADC_MODE(ADC_VCC);
+
 // defines the colors usable in the paletted 16 color frame buffer
 uint16_t palette[] = {ILI9341_BLACK, // 0
                       ILI9341_WHITE, // 1
                       ILI9341_YELLOW, // 2
-                      0x7E3C
-                      }; //3
+                      0x7E3C}; //3
 
 int SCREEN_WIDTH = 240;
 int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
+bool scr_req = true;
+bool scr_stat = true;
+bool forced_update = false;
 
-ADC_MODE(ADC_VCC);
-
+ESP8266WiFiMulti wifiMulti;
 
 ILI9341_SPI tft = ILI9341_SPI(TFT_CS, TFT_DC);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
 Carousel carousel(&gfx, 0, 0, 240, 100);
-
 
 XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
 TouchControllerWS touchController(&ts);
@@ -90,8 +92,6 @@ TouchControllerWS touchController(&ts);
 void calibrationCallback(int16_t x, int16_t y);
 CalibrationCallback calibration = &calibrationCallback;
   
-
-
 WGConditions conditions;
 WGForecast forecasts[MAX_FORECASTS];
 WGAstronomy astronomy;
@@ -125,19 +125,23 @@ long lastDownloadUpdate = millis();
 String moonAgeImage = "";
 uint16_t screen = 0;
 long timerPress;
-bool canBtnPress;
 
 void connectWifi() {
-  if (WiFi.status() == WL_CONNECTED) return;
-  //Manual Wifi
-  WiFi.begin(WIFI_SSID,WIFI_PASS);
+  
+  wifiMulti.addAP(WIFI_SSID, WIFI_PASS);
+  wifiMulti.addAP(WIFI_SSID2, WIFI_PASS2);
+  
+  if(wifiMulti.run() != WL_CONNECTED) return;
   int i = 0;
-  while (WiFi.status() != WL_CONNECTED) {
+  
+  while (wifiMulti.run() != WL_CONNECTED) {
     delay(500);
-    if (i>80) i=0;
+    if (i>80) {
+      i=0;
+    }
     drawProgress(i,"Connecting to WiFi");
-    i+=10;
     Serial.print(".");
+    i+=10;
   }
 }
 
@@ -184,57 +188,70 @@ void setup() {
 
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
+  
+  carousel.setTimePerFrame(8000);  //8 seconds [default is 5s]
+  //carousel.setTimePerTransition(1000); //1 sec [default is 0.5s]
 
   // update the weather information
   updateData();
   timerPress = millis();
-  canBtnPress = true;
-}
 
-long lastDrew = 0;
-bool btnClick;
+}
 
 void loop() {
 
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
-    if (p.y < 80) {
-      IS_STYLE_12HR = !IS_STYLE_12HR;
+    Serial.print(p.x);
+    Serial.print(":");
+    Serial.println(p.y);
+    timerPress = millis();
+    if ((p.x < 210)&&(p.y > 280)) { // forced_update
+       forced_update = true;
+    }
+    else if ((p.x > 210)&&(p.y > 280)&&(scr_stat)) { // touch over battery while sceen is ON (was &&(scr_req))
+       scr_req = false; // request for OFF
+    } else if (p.y < 80) {
+       if (scr_stat) IS_STYLE_12HR = !IS_STYLE_12HR;
+       else scr_req = true; // request screen on - for wakeup from off state
     } else {
-      screen = (screen + 1) % screenCount;
+       screen = (screen + 1) % screenCount;
     }
   }
 
-  gfx.fillBuffer(MINI_BLACK);
-  if (screen == 0) {
-    drawTime();
-    int remainingTimeBudget = carousel.update();
-    if (remainingTimeBudget > 0) {
-      // You can do some work here
-      // Don't do stuff if you are below your
-      // time budget.
-      delay(remainingTimeBudget);
+  if (scr_stat) { // only idf the screen is ON
+    gfx.fillBuffer(MINI_BLACK);
+    if (screen == 0) {
+      drawTime();
+      int remainingTimeBudget = carousel.update();
+      if (remainingTimeBudget > 0) {
+        // You can do some work here
+        // Don't do stuff if you are below your
+        // time budget.
+        delay(remainingTimeBudget);
+      }
+      drawCurrentWeather();
+      drawAstronomy();
+    } else if (screen == 1) {
+      drawCurrentWeatherDetail();
+    } else if (screen == 2) {
+      drawForecastTable(0);
+    } else if (screen == 3) {
+      drawForecastTable(6);
+    } else if (screen == 4) {
+      drawAbout();
     }
-    drawCurrentWeather();
-    drawAstronomy();
-  } else if (screen == 1) {
-    drawCurrentWeatherDetail();
-  } else if (screen == 2) {
-    drawForecastTable(0);
-  } else if (screen == 3) {
-    drawForecastTable(6);
-  } else if (screen == 4) {
-    drawAbout();
+    gfx.commit();
   }
-  gfx.commit();
-
+  
   // Check if we should update weather information
-  if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
+  if ((millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS)||(forced_update)) {
       updateData();
       lastDownloadUpdate = millis();
+      forced_update = false;
   }
 
-  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
+  if ((SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) && (IS_STYLE_12HR)){ // after X minutes go to sleep, allow sleep only if 12h style
     drawProgress(25,"Going to Sleep!");
     delay(1000);
     drawProgress(50,"Going to Sleep!");
@@ -242,9 +259,25 @@ void loop() {
     drawProgress(75,"Going to Sleep!");
     delay(1000);    
     drawProgress(100,"Going to Sleep!");
+    scr_req = false; //get request for off.
+
     // go to deepsleep for xx minutes or 0 = permanently
-    ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
+    //ESP.deepSleep(0,  WAKE_RF_DEFAULT);  // 0 delay = permanently to sleep // or WAKE_RFCAL or WAKE_NO_RFCAL or WAKE_RF_DISABLED or WAKE_RF_DEFAULT
   }  
+
+  // Screen ON/OFF processing
+  if (scr_stat != scr_req) {  // pending change?
+    if (scr_req) { // OFF to ON
+       tft.writecommand(ILI9341_DISPON);
+       digitalWrite(TFT_LED, HIGH);
+       screen = 0;  
+    } else { // ON to OFF
+       tft.writecommand(ILI9341_DISPOFF);
+       digitalWrite(TFT_LED, LOW);
+    }
+    scr_stat = scr_req; //update the status  
+  }
+
 }
 
 // Update the internet based information and update screen
@@ -305,37 +338,40 @@ void drawTime() {
   time_t now = dstAdjusted.time(&dstAbbrev);
   struct tm * timeinfo = localtime (&now);
 
-  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.setFont(ArialRoundedMTBold_14);
-  gfx.setColor(MINI_WHITE);
-  String date = ctime(&now);
-  date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
-  gfx.drawString(120, 6, date);
+  if (timeinfo->tm_year > 116) { // valid, if the year is > 2016
 
-  gfx.setFont(ArialRoundedMTBold_36);
-
-  if (IS_STYLE_12HR) {
-    int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
-    sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
-    gfx.drawString(120, 20, time_str);
-  } else {
-    sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    gfx.drawString(120, 20, time_str);
+    gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+    gfx.setFont(ArialRoundedMTBold_14);
+    gfx.setColor(MINI_WHITE);
+    String date = ctime(&now);
+    date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
+    gfx.drawString(120, 6, date);
+  
+    gfx.setFont(ArialRoundedMTBold_36);
+  
+    if (IS_STYLE_12HR) {
+      int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
+      sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
+      gfx.drawString(120, 20, time_str);
+    } else {
+      sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+      gfx.drawString(120, 20, time_str);
+    }
+  
+    gfx.setTextAlignment(TEXT_ALIGN_LEFT);
+    gfx.setFont(ArialMT_Plain_10);
+    gfx.setColor(MINI_BLUE);
+    if (IS_STYLE_12HR) {
+      sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour>=12?"PM":"AM");
+      gfx.drawString(195, 27, time_str);
+    } else {
+      sprintf(time_str, "%s", dstAbbrev);
+      gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
+    }
   }
-
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.setFont(ArialMT_Plain_10);
-  gfx.setColor(MINI_BLUE);
-  if (IS_STYLE_12HR) {
-    sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour>=12?"PM":"AM");
-    gfx.drawString(195, 27, time_str);
-  } else {
-    sprintf(time_str, "%s", dstAbbrev);
-    gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
-  }
-
+  
   drawWifiQuality();
-
+  drawBattery();
 }
 
 // draws current weather information
@@ -495,6 +531,31 @@ void drawWifiQuality() {
   }
 }
 
+void drawBattery() {
+  uint8_t percentage = 100;
+  float power = analogRead(A0) * 49 / 10240.0;  //Use 5:1V scale divider, analogRead 0.0-1.0V to 10bit.
+  if ((power > 4.15)||(power < 1.0)) percentage = 100;
+  else if (power < 3.7) percentage = 0;
+  else percentage = (power - 3.7) * 100 / (4.15-3.7); // 100% to 0% Li
+
+  gfx.setColor(MINI_WHITE);
+  gfx.setTextAlignment(TEXT_ALIGN_LEFT); 
+  gfx.drawString(26, 9, String(percentage) + "%");
+  gfx.drawRect( 1,11,18, 9); // Battery outline
+  gfx.drawLine(21,13,21,17);  // Battery plus
+  gfx.drawLine(22,13,22,17);  
+  
+  gfx.setColor(MINI_BLUE); // Battery inside
+  gfx.fillRect(3, 13, 15 * percentage / 100, 5);
+  
+  if (power < 1.0) { // or charging pin == high  (later)
+    gfx.setColor(MINI_WHITE); // AC symbol as black arrow inside blue fill
+    gfx.drawLine( 6,15,10,13); 
+    gfx.drawLine(10,13,10,17);
+    gfx.drawLine(10,17,14,15);
+  }
+}
+
 void drawForecastTable(uint8_t start) {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -512,6 +573,7 @@ void drawForecastTable(uint8_t start) {
     if (y > 320) {
       break;
     }
+    
     gfx.drawPalettedBitmapFromPgm(0, y, getMiniMeteoconIconFromProgmem(forecasts[i].forecastIcon));
 
     gfx.setColor(MINI_YELLOW);
@@ -530,10 +592,11 @@ void drawForecastTable(uint8_t start) {
       temp = forecasts[i - 1].forecastLowTemp;
     }
     gfx.drawString(235, y, temp + degreeSign);
+	
     /*gfx.setColor(MINI_WHITE);
     gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
-
     gfx.drawPalettedBitmapFromPgm(x, y + 15, getMiniMeteoconIconFromProgmem(forecasts[dayIndex].forecastIcon));*/
+	
     gfx.setColor(MINI_BLUE);
     gfx.drawString(235, y + 15, forecasts[i].PoP + "%");
 
@@ -555,7 +618,10 @@ void drawAbout() {
   drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
   drawLabelValue(9, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
-  drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
+//  drawLabelValue(11, "V in: ", String(ESP.getVcc() / 1024.0) +"V");
+  float volts = analogRead(A0) * 49 / 10240.0;
+  if (volts < 1.0) drawLabelValue(11, "VCC: ", "OK (AC)");
+  else drawLabelValue(11, "VCC: ", String(volts) +"V");
   drawLabelValue(12, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
   char time_str[15];
   const uint32_t millis_in_day = 1000 * 60 * 60 * 24;

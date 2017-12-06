@@ -21,12 +21,14 @@ See more at http://blog.squix.ch
 #include <simpleDSTadjust.h>
 
 // Setup
-#define WIFI_SSID "yourssid"
-#define WIFI_PASS "yourpassw0rd"
+#define WIFI_SSID "MySSID1"
+#define WIFI_PASS "MyPass1" 
+
+#define WIFI_SSID2 "MySSID2"
+#define WIFI_PASS2 "MyPass2" 
 
 const int UPDATE_INTERVAL_SECS = 15 * 60; // Update every 10 minutes
-const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
-
+const int SLEEP_INTERVAL_SECS = 600;      // 10 min - Going to sleep after no touch, set 0 for continuous operation
 
 // Pins for the ILI9341
 #define TFT_DC D2
@@ -35,10 +37,8 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 
 #define HAVE_TOUCHPAD
 #define TOUCH_CS D3
-#define TOUCH_IRQ  D4
-    
-
-
+#define TOUCH_IRQ D4
+ 
 // Wunderground Settings
 // To check your settings first try them out in your browser:
 // http://api.wunderground.com/api/WUNDERGROUND_API_KEY/conditions/q/WUNDERGROUND_COUNTTRY/WUNDERGROUND_CITY.json
@@ -68,9 +68,8 @@ bool IS_STYLE_12HR = false;
 
 // change for different ntp (time servers)
 #define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
-// #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
+//#define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
 
 /***************************
  * End Settings
  **************************/
-
