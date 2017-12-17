@@ -104,6 +104,7 @@ int readNTC() {
 #include "ArialRounded.h"
 #include "moonphases.h"
 #include "weathericons.h"
+#include "configportal.h"
 
 #define MINI_BLACK 0
 #define MINI_WHITE 1
@@ -163,6 +164,7 @@ WGAstronomy astronomy;
 // Setup simpleDSTadjust Library rules
 simpleDSTadjust dstAdjusted(StartRule, EndRule);
 
+void drawWifiQuality();
 void updateData();
 void drawProgress(uint8_t percentage, String text);
 void drawTime(bool saver = false);
@@ -188,21 +190,93 @@ long lastDownloadUpdate = millis();
 
 String moonAgeImage = "";
 uint16_t screen = 0;
-long timerPress;
-bool canBtnPress;
+//long timerPress;
+//bool canBtnPress;
 
-void connectWifi() {
-  if (WiFi.status() == WL_CONNECTED) return;
+void systemRestart() {
+  WiFi.forceSleepBegin();
+  wdt_reset();
+  ESP.restart();
+  while(1)wdt_reset();;  
+}
+
+int getBtnState() {
+    pinMode(BTN_1, INPUT_PULLUP);
+    delay(1);
+    int btnState = digitalRead(BTN_1);
+    pinMode(BTN_1, OUTPUT);
+    if (btnState == LOW){
+      if(canBtnPress){
+        timerPress = millis();
+        canBtnPress = false;
+      }else {
+        if ((!btnClick) && ((millis() - timerPress)>3000)) {     // long press to pen init  
+          return 2;
+        }    
+      }
+    }else if(!canBtnPress){
+      canBtnPress = true;
+      btnClick = false;
+      if ((millis() - timerPress)<800) {    
+        return 1;
+      }
+    }   
+    return 0;
+}
+
+bool firstConnect = true;
+
+void restoreConfig() {
+    int btnState = getBtnState();
+    if (firstConnect && (btnState==1)) {
+      showConfigMessage("Resume to default setting ?\n \n \nYes.(Long press Flash button)\n \nNo.(Short press Flash button)");
+      while (true) {
+        btnState = getBtnState();
+        delay(200);
+        if (btnState==1) break;
+        if (btnState==2) {
+          SPIFFS.remove(configFileName);
+          showConfigMessage("\n \n \nSettings are restored. \n \nsystem goto restarting .....");
+          delay(2000);
+          systemRestart();             
+        } 
+        if ((millis() - timerPress)> 120 * 1000) break;
+      }
+    }
+    if (btnState==2) {
+      startConfig();
+    }
+}
+
+boolean connectWifi() {
+  if (WiFi.status() == WL_CONNECTED) return true;
   //Manual Wifi
-  WiFi.begin(WIFI_SSID,WIFI_PASS);
-  int i = 0;
+  WiFi.mode(WIFI_STA);
+  Serial.print("[");
+  Serial.print(WIFI_SSID.c_str());
+  Serial.print("]");
+  Serial.print("[");
+  Serial.print(WIFI_PASS.c_str());
+  Serial.print("]");
+  
+  WiFi.begin(WIFI_SSID.c_str(),WIFI_PASS.c_str());
+  int i = 0; 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    if (i>200) break;
-    drawProgress(i % 80 + 10,"Connecting to WiFi");
-    i+=10;
+    delay(50);
+    if (i > 200) {
+      Serial.println("Could not connect to WiFi");
+      if (firstConnect) {
+        firstConnect = false;
+        startConfig();
+      }
+      return false;
+    }
+    if (!(i % 10)) drawProgress(i % 80 + 10,"Connecting to WiFi");    
     Serial.print(".");
+    restoreConfig();
+    i++;   
   }
+  return true;
 }
 
 void setup() {
@@ -216,21 +290,26 @@ void setup() {
 
   #ifdef TFT_LED_LOW
     digitalWrite(TFT_LED, LOW);
-    delay(50);    
-    digitalWrite(TFT_LED, HIGH);  
-    digitalWrite(TFT_LED, LOW);
   #else
     digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
-  #endif
-  
+  #endif  
+  delay(500);
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
+  // load config if it exists. Otherwise use defaults.
+  boolean mounted = SPIFFS.begin();
+  if (!mounted) {
+    SPIFFS.format();
+    SPIFFS.begin();
+  }
+  // SPIFFS.remove(configFileName);
+  loadConfig();  
+
 #ifdef HAVE_TOUCHPAD 
   ts.begin();
-  SPIFFS.begin();
-  //SPIFFS.remove("/calibration.txt");
+  //SPIFFS.remove("/calibration.txt");configFileName
   boolean isCalibrationAvailable = touchController.loadCalibration();
   if (!isCalibrationAvailable) {
     touchCalibration();
@@ -241,6 +320,15 @@ void setup() {
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
 
+  server.on ( "/", handleRoot );
+  server.on ( "/save", handleSave);
+  server.on ( "/reset", []() {
+//     ESP.restart();
+      systemRestart();       
+  } );
+  server.onNotFound ( handleNotFound );
+  server.begin();
+
   // update the weather information
   updateData();
   timerPress = millis();
@@ -248,7 +336,8 @@ void setup() {
 }
 
 long lastDrew = 0;
-bool btnClick,btnLongClick;
+//bool btnClick;
+bool btnLongClick;
 
 float temperature = 0.0;
 
@@ -302,6 +391,54 @@ float temperature = 0.0;
   }
 #endif
 
+void showConfigMessage(String s) {
+  gfx.fillBuffer(0);  
+  gfx.setColor(1);  
+  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+  gfx.setFont(ArialMT_Plain_16);
+  gfx.drawString(240 / 2, 40,s);
+  gfx.commit();  
+}
+
+void startConfig() {
+  String s = "";
+  if (WiFi.status() == WL_CONNECTED) {
+      Serial.println ( "Open browser at http://" + WiFi.localIP().toString() );
+      s = "AZSMZ TFT Setup Mode\nConnected to:\n" + WiFi.SSID() + "\nOpen browser at\nhttp://" + WiFi.localIP().toString();     
+  } else {
+      WiFi.mode(WIFI_AP);
+      WiFi.softAP((ESP.getChipId()+CONFIG_SSID).c_str());
+      IPAddress myIP = WiFi.softAPIP();  
+      Serial.println(myIP);   
+      s = "\nAZSMZ TFT Setup Mode\nConnect WiFi to:\n" + String(ESP.getChipId()) + CONFIG_SSID + "\nOpen browser at\nhttp://" + myIP.toString();
+  }
+
+  s += "\n \nPls short press again\n to exit setup.";
+#ifdef HAVE_TOUCHPAD 
+  s += "\n \nPls long press again\n to setup TOUCHPAD.";
+#endif
+  showConfigMessage(s);
+  Serial.println ( "HTTP server started" );
+  btnClick = true;
+  btnLongClick = false;
+  while(true) {
+    server.handleClient();
+    yield();
+
+    int btnState =  getBtnState();
+    if (btnState == 2) {
+          #ifdef HAVE_TOUCHPAD           
+            touchCalibration(); 
+            showConfigMessage(s);          
+          #endif 
+    }
+    if (btnState == 1) break;
+    if ((millis() - timerPress)> 300 * 1000) break;
+  }
+  pinMode(BTN_1, OUTPUT);   
+  updateData();       
+}
+
 float power;
 
 void loop() {
@@ -325,29 +462,17 @@ void loop() {
   digitalWrite(TFT_CS, HIGH);
   digitalWrite(TOUCH_CS, HIGH);
   digitalWrite(BTN_1, 0);
-  pinMode(BTN_1, INPUT_PULLUP);
-  delay(1);
-  int btnState = digitalRead(BTN_1);
-  if (btnState == LOW){
-    if(canBtnPress){
-      timerPress = millis();
-      canBtnPress = false;
-    } else {
-        if ((!btnClick) && ((millis() - timerPress)>3000)) {     // long press to pen init       
-          btnLongClick = true;
-        } 
+
+  int btnState = getBtnState();
+  if (btnState==1) {
+    if (screen==screenCount) screen=0;
+    else {
+      screen = (screen + 1) % screenCount;
     }
-  }else if(!canBtnPress){
-    canBtnPress = true;
-    btnClick = false;
-    if ((millis() - timerPress)<800) {
-        if (screen==screenCount) screen=0;
-        else {
-          screen = (screen + 1) % screenCount;
-        }
-    }
+  }
+  if (btnState==2) {
+    btnLongClick = true;
   } 
-  pinMode(BTN_1, OUTPUT);
 #endif  
 
   #ifdef HAVE_TOUCHPAD
@@ -356,12 +481,20 @@ void loop() {
       temperature = readNTC()/10.0;
     #endif 
     if (btnLongClick) {
-      touchCalibration();
+//      touchCalibration();   
+      startConfig();          
       btnLongClick = false;
     }
   #else
     power = analogRead(A0) * 49 / 10240.0;
+    if (btnLongClick) {
+      startConfig();          
+      btnLongClick = false;
+    }
+    
   #endif
+
+  if ((screen<screenCount) && ((millis() - timerPress)> 30 * 1000)) screen = 0;  // after 30 secs return screen 0
 
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
@@ -421,11 +554,11 @@ void loop() {
 
 // Update the internet based information and update screen
 void updateData() {
-  WiFi.mode(WIFI_STA);
-  connectWifi();
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
 
+  if (!connectWifi()) return;
+ 
   drawProgress(10, "Updating time...");
   configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
 
@@ -448,7 +581,7 @@ void updateData() {
   astronomyClient = nullptr;
   moonAgeImage = String((char) (65 + 26 * (((15 + astronomy.moonAge.toInt()) % 30) / 30.0)));
 
-  WiFi.mode(WIFI_OFF);
+//  WiFi.mode(WIFI_OFF);
   delay(1000);
 }
 
@@ -536,7 +669,8 @@ void drawCurrentWeather() {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_BLUE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 65, DISPLAYED_CITY_NAME);
+//  gfx.drawString(220, 65, DISPLAYED_CITY_NAME);
+  gfx.drawString(220, 65, WUNDERGROUND_CITY);
 
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
@@ -772,7 +906,7 @@ void drawAbout() {
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
   
   #ifdef BATT
-    drawLabelValue(11, "Battery: ", String(analogRead(A0) * 49 / 10240.0) +"V");
+    drawLabelValue(11, "Battery: ", String(power) +"V");
   #else
     drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) +"V");
   #endif     
