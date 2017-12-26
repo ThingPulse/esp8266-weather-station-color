@@ -449,7 +449,7 @@ void startConfig() {
 float power;
 
 void loop() {
- 
+
 #ifdef HAVE_TOUCHPAD
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
@@ -549,7 +549,7 @@ void loop() {
       ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
   }
 
-  if (SAVER_INTERVAL_SECS && (millis() - timerPress >= SAVER_INTERVAL_SECS * 1000)&&(millis() - timerPress >= SAVER_INTERVAL_SECS * 1000)){ // after SAVER_INTERVAL_SECS go to saver
+  if (SAVER_INTERVAL_SECS && (millis() - timerPress >= SAVER_INTERVAL_SECS * 1000)&&(millis() - timerTouch >= SAVER_INTERVAL_SECS * 1000)){ // after SAVER_INTERVAL_SECS go to saver
       screen = screenCount;
   }
 
