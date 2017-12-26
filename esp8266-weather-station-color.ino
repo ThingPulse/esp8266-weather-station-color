@@ -100,6 +100,12 @@ int readNTC() {
 #include <Carousel.h>
 #include <ILI9341_SPI.h>
 
+/*  
+ *  if (hwSPI) spi_begin();   
+    if (!(_rst>0)) writecommand(ILI9341_SWRESET);
+    writecommand(0xEF);
+    */
+
 
 #include "ArialRounded.h"
 #include "moonphases.h"
@@ -190,8 +196,10 @@ long lastDownloadUpdate = millis();
 
 String moonAgeImage = "";
 uint16_t screen = 0;
-//long timerPress;
-//bool canBtnPress;
+long timerPress;
+long timerTouch;
+bool canBtnPress;
+bool btnClick;
 
 void systemRestart() {
   WiFi.forceSleepBegin();
@@ -336,7 +344,6 @@ void setup() {
 }
 
 long lastDrew = 0;
-//bool btnClick;
 bool btnLongClick;
 
 float temperature = 0.0;
@@ -454,7 +461,7 @@ void loop() {
           screen = (screen + 1) % screenCount;
       }
     }
-    timerPress = millis();            
+    timerTouch = millis();            
   }
 #endif  
 
@@ -494,8 +501,9 @@ void loop() {
     
   #endif
 
-  if ((screen<screenCount) && ((millis() - timerPress)> 30 * 1000)) screen = 0;  // after 30 secs return screen 0
-
+//  if ((screen<screenCount) && ((millis() - timerPress)> 30 * 1000)) screen = 0;  // after 30 secs return screen 0
+  if ((screen<screenCount) && ((millis() - timerPress)> 30 * 1000) && ((millis() - timerTouch)> 30 * 1000)) screen = 0;  // after 30 secs return screen 0
+  
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
     drawTime();
@@ -525,7 +533,8 @@ void loop() {
   }
   gfx.commit();
 
-  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000){ // after 2 minutes go to sleep
+
+  if (SLEEP_INTERVAL_SECS && (millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) && (millis() - timerTouch >= SLEEP_INTERVAL_SECS * 1000)){ // after 2 minutes go to sleep
       drawProgress(25,"Going to Sleep!");
       delay(1000);
       drawProgress(50,"Going to Sleep!");
@@ -540,7 +549,7 @@ void loop() {
       ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
   }
 
-  if (SAVER_INTERVAL_SECS && millis() - timerPress >= SAVER_INTERVAL_SECS * 1000){ // after SAVER_INTERVAL_SECS go to saver
+  if (SAVER_INTERVAL_SECS && (millis() - timerPress >= SAVER_INTERVAL_SECS * 1000)&&(millis() - timerPress >= SAVER_INTERVAL_SECS * 1000)){ // after SAVER_INTERVAL_SECS go to saver
       screen = screenCount;
   }
 
