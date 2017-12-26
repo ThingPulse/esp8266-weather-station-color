@@ -298,9 +298,6 @@ void handleNotFound() {
 }
 
 
-long timerPress;
-bool canBtnPress,btnClick;
-
 void startConfigPortal(MiniGrafx *gfx) {
 
   server.on ( "/", handleRoot );
@@ -346,8 +343,4 @@ void startConfigPortal(MiniGrafx *gfx) {
     yield();
   }
 }
-
-
-
-
 
