@@ -31,6 +31,7 @@ const char HTTP_FORM_START[] PROGMEM      = "<form method='post' action='save'><
 const char HTTP_FORM_PARAM[] PROGMEM      = "<label for='{i}'>{p}</label><br/><input id='{i}' name='{n}' maxlength={l}  value='{v}' {c}><br/><br/>";
 const char HTTP_FORM_END[] PROGMEM        = "<br/><button type='submit'>save</button></form><br/><form action=\"/reset\" method=\"get\"><button>Restart ESP</button></form>";
 const char HTTP_SCAN_LINK[] PROGMEM       = "<br/><div class=\"c\"><a href=\"/wifi\">Scan</a></div>";
+const char HTTP_UPDATE_LINK[] PROGMEM       = "<br/><div class=\"c\"><a href=\"/update\">Firmware upgrade</a></div>";
 const char HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br />Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";
 const char HTTP_END[] PROGMEM             = "</div></body></html>";
 const char HTTP_OPTION_ITEM[] PROGMEM     = "<option value=\"{v}\" {s}>{n}</option>";
@@ -248,6 +249,7 @@ void handleRoot() {
   page += getFormField("timeSleep", "Deep sleep (after minutes)", "40", String(SLEEP_INTERVAL_SECS/60), "");
   
   page += FPSTR(HTTP_FORM_END);
+  page += FPSTR(HTTP_UPDATE_LINK);
   page += FPSTR(HTTP_END);
 
   server.sendHeader("Content-Length", String(page.length()));
@@ -297,7 +299,6 @@ void handleNotFound() {
   //digitalWrite ( led, 0 );
 }
 
-
 void startConfigPortal(MiniGrafx *gfx) {
 
   server.on ( "/", handleRoot );
@@ -318,29 +319,18 @@ void startConfigPortal(MiniGrafx *gfx) {
   
   if (connected) {
       Serial.println ( "Open browser at http://" + WiFi.localIP() );
-
-      gfx->drawString(296 / 2, 10, "ESPaper Setup Mode\nConnected to: " + WiFi.SSID() + "\nOpen browser at\nhttp://" + WiFi.localIP().toString());
-      
+      gfx->drawString(296 / 2, 10, "ESPaper Setup Mode\nConnected to: " + WiFi.SSID() + "\nOpen browser at\nhttp://" + WiFi.localIP().toString());     
   } else {
       WiFi.mode(WIFI_AP);
       WiFi.softAP(CONFIG_SSID.c_str());
       IPAddress myIP = WiFi.softAPIP();  
       Serial.println(myIP);
-      
-
       gfx->drawString(296 / 2, 10, "ESPaper Setup Mode\nConnect WiFi to:\n" + CONFIG_SSID + "\nOpen browser at\nhttp://" + myIP.toString());
-
   }
-
   gfx->commit();
-
-
-
   Serial.println ( "HTTP server started" );
-
   while(true) {
     server.handleClient();
     yield();
   }
 }
-
