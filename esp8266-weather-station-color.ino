@@ -27,6 +27,9 @@ See more at https://blog.squix.org
 #include <Arduino.h>
 #include <SPI.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266HTTPUpdateServer.h>
+
+ESP8266HTTPUpdateServer httpUpdater;
 
 #ifdef HAVE_TOUCHPAD
   #include <XPT2046_Touchscreen.h>
@@ -335,6 +338,8 @@ void setup() {
       systemRestart();       
   } );
   server.onNotFound ( handleNotFound );
+
+  httpUpdater.setup(&server);
   server.begin();
 
   // update the weather information
