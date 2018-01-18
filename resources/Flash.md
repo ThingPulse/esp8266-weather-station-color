@@ -11,8 +11,22 @@
   3. ## Start flash new Firmware. ##
   
   3.1 open esp8266flasher.exe  
-     ![open esp8266flasher](flash-1.jpg)      
+  
+        ![open esp8266flasher](flash-1.jpg)      
+        
   3.2 set "config" please choice your downloaded firmware.    
+
+        ![open esp8266flasher](flash-2.jpg)      
+        
   3.3 set "Advanced"    
+  
+        ![open esp8266flasher](flash-3.jpg)      
+
   3.4 start flash    
-  3.5 reboot  
+  
+        ![open esp8266flasher](flash-4.jpg)      
+  
+  3.5 after Finsh to Reboot
+
+        ![open esp8266flasher](flash-5.jpg)      
+
