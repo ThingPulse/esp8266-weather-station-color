@@ -12,11 +12,11 @@
   
   3.1 open esp8266flasher.exe  
   
-        ![open esp8266flasher](flash-1.jpg)      
+        ![open esp8266flasher](/resources/flash-1.jpg)      
         
   3.2 set "config" please choice your downloaded firmware.    
 
-        ![open esp8266flasher](flash-2.jpg)      
+        ![open esp8266flasher](/resources/flash-2.jpg)      
         
   3.3 set "Advanced"    
   
