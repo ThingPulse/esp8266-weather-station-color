@@ -26,9 +26,9 @@
 
   3.5 Start Flash     
   # Note: #
-  1.press "reset" and "flash" button of AZSMZ TFT at the same time.        
-  2.release "reset" button first. release "flash" button.        
-  3.press "flash" button of ESP8266Flasher.         
+  1.press "Reset" and "Flash" button of AZSMZ TFT at the same time.        
+  2.release "Reset" button first. release "Flash" button.        
+  3.press "Flash" button of ESP8266Flasher.         
   
    ![open esp8266flasher](flash-5.jpg)      
   
