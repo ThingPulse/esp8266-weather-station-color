@@ -4,7 +4,7 @@ ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
 
 ## Hardware Requirements
 
-1. AZSMZ TFT & AZSMZ TFT TOUCH    
+## 1. AZSMZ TFT & AZSMZ TFT TOUCH    ##
 ## Install-Instructions:  ##
 https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instructions    
 
@@ -16,7 +16,7 @@ https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instruction
 The image below For AZSMZ TFT TOUCH Ver1.6 & Ver1.61:
 ![AZSMZ TFT TOUCH](resources/AZSMZ-TFT-TOUCH-WIRE.jpg)
 
-1. SQUIX
+## 2. SQUIX ##
 
 This code is made for an 240x320 65K ILI9341 display with code running on an ESP8266.
 Since it was sometimes complicated to find the right parts I created a kit which contains all the parts including the connector PCB:
