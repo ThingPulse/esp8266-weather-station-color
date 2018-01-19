@@ -8,6 +8,9 @@ ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
 ## Install-Instructions:  ##
 https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instructions    
 
+## Flash new firmware ##
+[Follow me](resources/Flash.md)
+
 ## Long press "Flash" button to enter web Configuration ##
 
 ![AZSMZ TFT](resources/AZSMZ-11.jpg)
