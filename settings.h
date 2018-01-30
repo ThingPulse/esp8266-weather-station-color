@@ -20,13 +20,16 @@ See more at http://blog.squix.ch
 
 #include <simpleDSTadjust.h>
 
-// Setup
-#define WIFI_SSID "yourssid"
-#define WIFI_PASS "yourpassw0rd"
+// Config mode SSID
+const String CONFIG_SSID = "@AZSMZ_TFT";
 
-const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
-const int SAVER_INTERVAL_SECS = 20;   // Going to screen saver after idle times, set 0 for dont screen saver.
-const int SLEEP_INTERVAL_SECS = 30;   // Going to Sleep after idle times, set 0 for dont sleep.
+// Setup
+String WIFI_SSID = "yourssid";
+String WIFI_PASS = "yourpassw0rd";
+
+int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
+int SAVER_INTERVAL_SECS = 20;   // Going to screen saver after idle times, set 0 for dont screen saver.
+int SLEEP_INTERVAL_SECS = 30;   // Going to Sleep after idle times, set 0 for dont sleep.
 
 #define SQUIX         10
 #define AZSMZ_1_1     11
@@ -87,11 +90,11 @@ const int SLEEP_INTERVAL_SECS = 30;   // Going to Sleep after idle times, set 0 
 // e.g. http://api.wunderground.com/api/808b********4511/conditions/q/CH/Zurich.json
 // e.g. http://api.wunderground.com/api/808b********4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
 
-const String DISPLAYED_CITY_NAME = "Zürich";
-const String WUNDERGRROUND_API_KEY = "WUNDERGROUND_KEY";
-const String WUNDERGRROUND_LANGUAGE = "EN";
-const String WUNDERGROUND_COUNTRY = "CH";
-const String WUNDERGROUND_CITY = "Zurich";
+String DISPLAYED_CITY_NAME = "Zürich";
+String WUNDERGRROUND_API_KEY = "WUNDERGROUND_KEY";
+String WUNDERGRROUND_LANGUAGE = "EN";
+String WUNDERGROUND_COUNTRY = "CH";
+String WUNDERGROUND_CITY = "Zurich";
 
 #define UTC_OFFSET + 1
 struct dstRule StartRule = {"CEST", Last, Sun, Mar, 2, 3600}; // Central European Summer Time = UTC/GMT +2 hours

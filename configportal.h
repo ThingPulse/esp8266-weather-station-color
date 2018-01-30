@@ -211,6 +211,11 @@ boolean loadConfig() {
 }
 
 void handleRoot() {
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.sendHeader("Content-Type","text/html",true);
+  server.sendHeader("Cache-Control","no-cache");
+  server.send(200); 
+  
   String page = FPSTR(HTTP_HEAD);
   page.replace("{v}", "Options");
   page += FPSTR(HTTP_SCRIPT);
@@ -224,10 +229,13 @@ void handleRoot() {
   page += getFormField("ssid", "WiFi SSID", "20", WIFI_SSID, "");
   page += getFormField("password", "WiFi Password", "20", WIFI_PASS, "");
   page += getFormField("wundergroundcity", "Wunderground City", "40", WUNDERGROUND_CITY, "");
-  page += getFormField("wundergroundstate", "Wunderground State", "40", WUNDERGROUND_COUNTRY, "");
+  page += getFormField("wundergroundstate", "Wunderground Country", "40", WUNDERGROUND_COUNTRY, "");
+
+  server.sendContent(page); page = "";
+  
   page += "<label for=\"wundergroundlanguage\">Wunderground Language</label>";
   page += "<select id=\"wundergroundlanguage\" name=\"wundergroundlanguage\">";
-  Serial.println(WUNDERGRROUND_LANGUAGE);
+  Serial.println(WUNDERGRROUND_LANGUAGE);   
   for (int i = 0; i < 82; i++) {
     String option = FPSTR(HTTP_OPTION_ITEM);
     String country = FPSTR(country_table[i]);
@@ -247,13 +255,15 @@ void handleRoot() {
 
   page += getFormField("timeSaver", "Screen saver (after minutes)", "40", String(SAVER_INTERVAL_SECS/60), "");
   page += getFormField("timeSleep", "Deep sleep (after minutes)", "40", String(SLEEP_INTERVAL_SECS/60), "");
+
+  server.sendContent(page); page = "";
   
   page += FPSTR(HTTP_FORM_END);
   page += FPSTR(HTTP_UPDATE_LINK);
   page += FPSTR(HTTP_END);
 
-  server.sendHeader("Content-Length", String(page.length()));
-  server.send(200, "text/html", page);
+  server.sendContent(page); page = "";
+  server.sendContent("");
 }
 
 void handleSave() {

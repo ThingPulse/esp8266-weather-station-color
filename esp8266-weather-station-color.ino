@@ -35,18 +35,19 @@ ESP8266HTTPUpdateServer httpUpdater;
   #include <XPT2046_Touchscreen.h>
   #include "TouchControllerWS.h"
 
-  ADC_MODE(ADC_VCC);
+//  ADC_MODE(ADC_VCC);
 
   #define CFG_POWER  0b10100111
   #define CFG_TEMP0  0b10000111
   #define CFG_TEMP1  0b11110111
   #define CFG_AUX    0b11100111
-  #define CFG_IRQ    0b11010000
+  #define CFG_IRQ    0b11010010
+  #define CFG_LIRQ   0b11010000
 
-  void XPT2046_EnableIrq() {
+  void XPT2046_EnableIrq(uint8_t q) {
     SPI.beginTransaction(SPISettings(2500000, MSBFIRST, SPI_MODE0));
     digitalWrite(TOUCH_CS, 0);
-    const uint8_t buf[4] = { CFG_IRQ, 0x00, 0x00, 0x00 };
+    const uint8_t buf[4] = { q, 0x00, 0x00, 0x00 };
     SPI.writeBytes((uint8_t *) &buf[0], 3);
     digitalWrite(TOUCH_CS, 1);
     SPI.endTransaction();
@@ -65,7 +66,7 @@ ESP8266HTTPUpdateServer httpUpdater;
     }
     p /= i;
 
-    XPT2046_EnableIrq();
+    XPT2046_EnableIrq(CFG_IRQ);
     digitalWrite(TOUCH_CS, 1);
     SPI.endTransaction();
     return p;
@@ -205,10 +206,14 @@ bool canBtnPress;
 bool btnClick;
 
 void systemRestart() {
-  WiFi.forceSleepBegin();
-  wdt_reset();
-  ESP.restart();
-  while(1)wdt_reset();;  
+    Serial.flush();
+    delay(500);
+    Serial.swap();
+    delay(100);
+    ESP.restart();
+    while (1) {
+        delay(1);
+    }; 
 }
 
 int getBtnState() {
@@ -304,7 +309,10 @@ void setup() {
   #else
     digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
   #endif  
-  delay(500);
+  delay(100);
+  
+  #define ILI9341_SWRESET 0x01
+  tft.writecommand(ILI9341_SWRESET);  
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
@@ -325,7 +333,6 @@ void setup() {
   if (!isCalibrationAvailable) {
     touchCalibration();
   } 
-  
 #endif  
 
   carousel.setFrames(frames, frameCount);
@@ -342,10 +349,11 @@ void setup() {
   httpUpdater.setup(&server);
   server.begin();
 
-  // update the weather information
-  updateData();
   timerPress = millis();
   canBtnPress = true;
+
+  // update the weather information
+  updateData();
 }
 
 long lastDrew = 0;
@@ -452,6 +460,24 @@ void startConfig() {
 }
 
 float power;
+#define VREF 2.5
+#define MPW 10
+
+void getPower() {
+      static int i;
+      static float p = 0;
+      //XPT2046_setCFG(CFG_POWER);
+      if (!power) power = XPT2046_ReadRaw(CFG_POWER) * VREF * 4 / 4096;        
+      if (!i) {
+        power = p/MPW;
+        p = 0;
+        i = MPW;
+      } else {
+        i--;
+        int v = XPT2046_ReadRaw(CFG_POWER);   
+        p += v * VREF * 4 / 4096;
+      }
+}
 
 void loop() {
 
@@ -488,7 +514,8 @@ void loop() {
 #endif  
 
   #ifdef HAVE_TOUCHPAD
-    power = XPT2046_ReadRaw(CFG_POWER) * 2.5 * 4 / 4096;
+//    power = XPT2046_ReadRaw(CFG_POWER) * 2.5 * 4 / 4096;
+    getPower();  
     #ifdef NTC
       temperature = readNTC()/10.0;
     #endif 
@@ -497,6 +524,7 @@ void loop() {
       startConfig();          
       btnLongClick = false;
     }
+
   #else
     power = analogRead(A0) * 49 / 10240.0;
     if (btnLongClick) {
@@ -549,7 +577,7 @@ void loop() {
       drawProgress(100,"Going to Sleep!");
       // go to deepsleep for xx minutes or 0 = permanently
       #ifdef HAVE_TOUCHPAD      
-        XPT2046_EnableIrq();
+        XPT2046_EnableIrq(CFG_LIRQ);
       #endif        
       ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
   }
