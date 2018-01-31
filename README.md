@@ -12,7 +12,7 @@ https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instruction
 [Follow me](resources/Flash.md)
 
 ## Short press "Flash" button to enable reset config to default at restart. ##
-## Long press "Flash" button to enter web Configuration at running.##
+## Long press "Flash" button to enter web Configuration at running.  ##
 
 ![AZSMZ TFT](resources/AZSMZ-11.jpg)
 
