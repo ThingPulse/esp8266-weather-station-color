@@ -11,7 +11,8 @@ https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instruction
 ## Flash new firmware (so easy) ##
 [Follow me](resources/Flash.md)
 
-## Long press "Flash" button to enter web Configuration ##
+## Short press "Flash" button to enable reset config to default at restart. ##
+## Long press "Flash" button to enter web Configuration at running.##
 
 ![AZSMZ TFT](resources/AZSMZ-11.jpg)
 
