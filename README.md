@@ -21,7 +21,7 @@ By buying the kit from us you are supporting future development. Thank you!
  * Json Streaming Parser by Daniel Eichhorn
  * simpleDSTadjust by neptune2
 
-You also need to get an key for the Wunderground API: [https://www.wunderground.com/weather/api/](https://www.wunderground.com/weather/api/)
+You also need to get a key for the Wunderground API: [https://www.wunderground.com/weather/api/](https://www.wunderground.com/weather/api/)
 
 ## Settings
 Please have a good look at the [settings.h](./settings.h) file. It offers config options for:
