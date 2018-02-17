@@ -7,7 +7,7 @@ ESP8266 Weather Station Color using ILI9341 240x320 TFT display
 
 ## Hardware Requirements
 
-The code in this project supports an ILI9341 240x320 TFT display with code running on an ESP8266. To get you up and running in no time we created a kit which contains all the necessary parts including a custom PCB to connect display an WiFi chip:
+The code in this project supports an ILI9341 240x320 TFT display with code running on an ESP8266. To get you up and running in no time we created a kit which contains all the necessary parts including a custom PCB to connect display and WiFi chip:
 [https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
 By buying the kit from us you are supporting future development. Thank you!
