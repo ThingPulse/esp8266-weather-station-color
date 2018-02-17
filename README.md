@@ -1,15 +1,18 @@
-# esp8266-weather-station-color
+# ThingPulse ESP8266 Weather Station Color
 
-ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
+
+[![ThingPulse logo](https://thingpulse.com/assets/ThingPulse-w300.svg)](https://thingpulse.com)
+
+ESP8266 Weather Station Color using ILI9341 240x320 TFT display
 
 ## Hardware Requirements
 
-This code is made for an 240x320 65K ILI9341 display with code running on an ESP8266.
-Since it was sometimes complicated to find the right parts I created a kit which contains all the parts including the connector PCB:
-https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4
-By buying the kit from me you are supporting future development. Thank you!
+The code in this project supports an ILI9341 240x320 TFT display with code running on an ESP8266. To get you up and running in no time we created a kit which contains all the necessary parts including a custom PCB to connect display an WiFi chip:
+[https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
-[![Squix ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4)
+By buying the kit from us you are supporting future development. Thank you!
+
+[![ThingPulse ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
 
 ## Software Requirements/ Libraries
@@ -18,15 +21,15 @@ By buying the kit from me you are supporting future development. Thank you!
  * Json Streaming Parser by Daniel Eichhorn
  * simpleDSTadjust by neptune2
 
-You also need to get an API key for the Wunderground data: https://www.wunderground.com/
+You also need to get an key for the Wunderground API: [https://www.wunderground.com/weather/api/](https://www.wunderground.com/weather/api/)
 
 ## Settings
-Please have a good look at the settings.h file. There you can:
- * set your location for the weather information
- * Set the clock mode: 12hour (am/pm) or 24hour mode
+Please have a good look at the [settings.h](./settings.h) file. It offers config options for:
+ * Location to obtain weather data for
+ * Clock mode: 12hour (am/pm) or 24hour
  * Metric system for temperature
  * Timezone and daytime saving options
- * API key for the wunderground service
+ * API key for the Wunderground service
 
 ## Wiring
 
