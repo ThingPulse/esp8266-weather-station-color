@@ -16,6 +16,9 @@ https://github.com/cxandy/esp8266-weather-station-color/wiki/Install-Instruction
 
 ![AZSMZ TFT](resources/AZSMZ-11.jpg)
 
+The image below For use DHT11:
+![AZSMZ TFT TOUCH](resources/DHT11-WIRE.jpg)
+
 The image below For AZSMZ TFT TOUCH Ver1.8:
 ![AZSMZ TFT TOUCH](resources/AZSMZ-TFT-TOUCH-1.8-WIRE.jpg)
 
