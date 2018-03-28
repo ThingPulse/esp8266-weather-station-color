@@ -14,24 +14,13 @@ By buying the kit from us you are supporting future development. Thank you!
 
 [![ThingPulse ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
+## Step-by-step tutorial
 
-## Software Requirements/ Libraries
- * Mini Grafx by Daniel Eichhorn
- * ESP8266 WeatherStation by Daniel Eichhorn
- * Json Streaming Parser by Daniel Eichhorn
- * simpleDSTadjust by neptune2
-
-You also need to get a key for the Wunderground API: [https://www.wunderground.com/weather/api/](https://www.wunderground.com/weather/api/)
-
-## Settings
-Please have a good look at the [settings.h](./settings.h) file. It offers config options for:
- * Location to obtain weather data for
- * Clock mode: 12hour (am/pm) or 24hour
- * Metric system for temperature
- * Timezone and daytime saving options
- * API key for the Wunderground service
+A complete step-by-step tutorial/guide is available at [https://docs.thingpulse.com/guides/wifi-color-display-kit/](https://docs.thingpulse.com/guides/wifi-color-display-kit/).
 
 ## Wiring
+
+The below wiring diagram is only needed when you do _not_ buy the self-contained kit from ThingPulse but rather assemble the components yourself.
 
 ![Wiring](resources/PlaneSpotterWiring.png)
 
