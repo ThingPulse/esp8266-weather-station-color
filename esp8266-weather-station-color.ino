@@ -130,7 +130,9 @@ bool canBtnPress;
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
   //Manual Wifi
+  WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID,WIFI_PASS);
+  WiFi.hostname(WIFI_HOSTNAME);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
