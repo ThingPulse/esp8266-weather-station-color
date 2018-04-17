@@ -19,7 +19,7 @@ We are a friendly and welcoming community and look forward to your contributions
 If you made something really cool but won't spend the time to integrate it into this upstream project please still share it in your fork on GitHub. If you mention it in an issue we'll take a look at it anyway.
 
 ## Writing Documentation
-ThingPulse maintains documentation for its products at [https://github.com/thingpulse/docs/](https://github.com/thingpulse/docs/). If contribute features for this project that requires altering the respective product guide then we ask you to prepare a pull request with the necessary documentation changes as well.
+ThingPulse maintains documentation for its products at [https://github.com/thingpulse/docs/](https://github.com/thingpulse/docs/). If you contribute features for this project that require altering the respective product guide then we ask you to prepare a pull request with the necessary documentation changes as well.
 
 ## Working with Git and GitHub
 
