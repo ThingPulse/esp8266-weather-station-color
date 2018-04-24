@@ -130,14 +130,18 @@ bool canBtnPress;
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
   //Manual Wifi
+  Serial.print("Connecting to WiFi ");
+  Serial.print(WIFI_SSID);
+  Serial.print("/");
+  Serial.println(WIFI_PASS);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID,WIFI_PASS);
   WiFi.hostname(WIFI_HOSTNAME);
+  WiFi.begin(WIFI_SSID,WIFI_PASS);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     if (i>80) i=0;
-    drawProgress(i,"Connecting to WiFi");
+    drawProgress(i,"Connecting to WiFi '" + String(WIFI_SSID) + "'");
     i+=10;
     Serial.print(".");
   }
