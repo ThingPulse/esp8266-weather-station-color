@@ -51,7 +51,7 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 
 const String DISPLAYED_CITY_NAME = "Zurich";
 const String WUNDERGRROUND_API_KEY = "<YOUR_WUNDERGROUND_API_KEY>";
-const String WUNDERGRROUND_LANGUAGE = "EN";
+const String WUNDERGRROUND_LANGUAGE = "EN"; // as per https://www.wunderground.com/weather/api/d/docs?d=resources/country-to-iso-matching
 const String WUNDERGROUND_COUNTRY = "CH";
 const String WUNDERGROUND_CITY = "Zurich";
 
