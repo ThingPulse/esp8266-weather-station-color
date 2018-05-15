@@ -102,6 +102,7 @@ simpleDSTadjust dstAdjusted(StartRule, EndRule);
 void updateData();
 void drawProgress(uint8_t percentage, String text);
 void drawTime();
+void drawWifiQuality();
 void drawCurrentWeather();
 void drawForecast();
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
@@ -214,6 +215,7 @@ void loop() {
   gfx.fillBuffer(MINI_BLACK);
   if (screen == 0) {
     drawTime();
+    drawWifiQuality();
     int remainingTimeBudget = carousel.update();
     if (remainingTimeBudget > 0) {
       // You can do some work here
@@ -291,7 +293,7 @@ void drawProgress(uint8_t percentage, String text) {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 80, "https://blog.squix.org");
+  gfx.drawString(120, 80, "https://thingpulse.com");
   gfx.setColor(MINI_YELLOW);
 
   gfx.drawString(120, 146, text);
@@ -339,9 +341,6 @@ void drawTime() {
     sprintf(time_str, "%s", dstAbbrev);
     gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
   }
-
-  drawWifiQuality();
-
 }
 
 // draws current weather information
@@ -553,7 +552,7 @@ void drawAbout() {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 80, "https://blog.squix.org");
+  gfx.drawString(120, 80, "https://thingpulse.com");
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
