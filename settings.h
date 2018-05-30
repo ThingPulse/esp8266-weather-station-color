@@ -40,22 +40,32 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
     
 
 
-// Wunderground Settings
-// To check your settings first try them out in your browser:
-// http://api.wunderground.com/api/WUNDERGROUND_API_KEY/conditions/q/WUNDERGROUND_COUNTTRY/WUNDERGROUND_CITY.json
-// e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CH/Zurich.json
-// e.g. http://api.wunderground.com/api/808ba87ed77c4511/conditions/q/CA/SAN_FRANCISCO.json <- note that in the US you use the state instead of country code
-// If you want to have control over the exact weather station ("observation location") that WU uses you need to replace
-// the city with "pws:STATION_ID". So, for the Aquatic Park in San Francisco you'd use "pws:KCASANFR359".
-// Alternative query options are documented at https://www.wunderground.com/weather/api/d/docs?d=data/index&MR=1#standard_request_url_format
+// OpenWeatherMap Settings
+// Sign up here to get an API key:
+// https://home.openweathermap.org/users/sign_up
+const boolean IS_METRIC = true;
+String OPEN_WEATHER_MAP_APP_ID = "6bdd4d9d45a97d690103477a4c67c38f";
+String OPEN_WEATHER_MAP_LOCATION = "Zurich,CH";
 
-const String DISPLAYED_CITY_NAME = "Zurich";
-const String WUNDERGRROUND_API_KEY = "<YOUR_WUNDERGROUND_API_KEY>";
-const String WUNDERGRROUND_LANGUAGE = "EN"; // as per https://www.wunderground.com/weather/api/d/docs?d=resources/country-to-iso-matching
-const String WUNDERGROUND_COUNTRY = "CH";
-const String WUNDERGROUND_CITY = "Zurich";
+// Pick a language code from this list:
+// Arabic - ar, Bulgarian - bg, Catalan - ca, Czech - cz, German - de, Greek - el,
+// English - en, Persian (Farsi) - fa, Finnish - fi, French - fr, Galician - gl,
+// Croatian - hr, Hungarian - hu, Italian - it, Japanese - ja, Korean - kr,
+// Latvian - la, Lithuanian - lt, Macedonian - mk, Dutch - nl, Polish - pl,
+// Portuguese - pt, Romanian - ro, Russian - ru, Swedish - se, Slovak - sk,
+// Slovenian - sl, Spanish - es, Turkish - tr, Ukrainian - ua, Vietnamese - vi,
+// Chinese Simplified - zh_cn, Chinese Traditional - zh_tw.
 
-#define UTC_OFFSET + 1
+String OPEN_WEATHER_MAP_LANGUAGE = "en";
+const uint8_t MAX_FORECASTS = 10;
+
+// Adjust according to your language
+const String WDAY_NAMES[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+const String MONTH_NAMES[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+const String MOON_PHASES[] = {"New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+                              "Full Moon", "Waning Gibbous", "Third quarter", "Waning Crescent"};
+
+#define UTC_OFFSET +1
 struct dstRule StartRule = {"CEST", Last, Sun, Mar, 2, 3600}; // Central European Summer Time = UTC/GMT +2 hours
 struct dstRule EndRule = {"CET", Last, Sun, Oct, 2, 0};       // Central European Time = UTC/GMT +1 hour
 
@@ -64,8 +74,6 @@ struct dstRule EndRule = {"CET", Last, Sun, Oct, 2, 0};       // Central Europea
 // struct dstRule StartRule = {"EDT", Second, Sun, Mar, 2, 3600}; // Eastern Daylight time = UTC/GMT -4 hours
 // struct dstRule EndRule = {"EST", First, Sun, Nov, 1, 0};       // Eastern Standard time = UTC/GMT -5 hour
 
-// values in metric or imperial system?
-bool IS_METRIC = true;
 
 // Change for 12 Hour/ 24 hour style clock
 bool IS_STYLE_12HR = false;

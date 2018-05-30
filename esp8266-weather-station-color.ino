@@ -1,5 +1,5 @@
 /**The MIT License (MIT)
-Copyright (c) 2017 by Daniel Eichhorn
+Copyright (c) 2018 by Daniel Eichhorn
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -41,9 +41,9 @@ See more at https://blog.squix.org
  ***/
 
 #include <JsonListener.h>
-#include <WundergroundConditions.h>
-#include <WundergroundForecast.h>
-#include <WundergroundAstronomy.h>
+#include <OpenWeatherMapCurrent.h>
+#include <OpenWeatherMapForecast.h>
+#include <Astronomy.h>
 #include <MiniGrafx.h>
 #include <Carousel.h>
 #include <ILI9341_SPI.h>
@@ -91,13 +91,10 @@ void calibrationCallback(int16_t x, int16_t y);
 CalibrationCallback calibration = &calibrationCallback;
   
 
-
-WGConditions conditions;
-WGForecast forecasts[MAX_FORECASTS];
-WGAstronomy astronomy;
-
-// Setup simpleDSTadjust Library rules
+OpenWeatherMapCurrentData currentWeather;
+OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
 simpleDSTadjust dstAdjusted(StartRule, EndRule);
+Astronomy::MoonData moonData;
 
 void updateData();
 void drawProgress(uint8_t percentage, String text);
@@ -112,12 +109,14 @@ void drawLabelValue(uint8_t line, String label, String value);
 void drawForecastTable(uint8_t start);
 void drawAbout();
 void drawSeparator(uint16_t y);
+String getTime(time_t *timestamp);
 const char* getMeteoconIconFromProgmem(String iconText);
 const char* getMiniMeteoconIconFromProgmem(String iconText);
 void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
-FrameCallback frames[] = { drawForecast1, drawForecast2 };
-int frameCount = 2;
+void drawForecast3(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
+FrameCallback frames[] = { drawForecast1, drawForecast2, drawForecast3 };
+int frameCount = 3;
 
 // how many different screens do we have?
 int screenCount = 5;
@@ -127,6 +126,7 @@ String moonAgeImage = "";
 uint16_t screen = 0;
 long timerPress;
 bool canBtnPress;
+time_t dstOffset = 0;
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
@@ -146,6 +146,8 @@ void connectWifi() {
     i+=10;
     Serial.print(".");
   }
+  drawProgress(100,"Connected to WiFi '" + String(WIFI_SSID) + "'");
+  Serial.print("Connected...");
 }
 
 void setup() {
@@ -165,12 +167,17 @@ void setup() {
 
   connectWifi();
 
+  Serial.println("Initializing touch screen...");
   ts.begin();
-
+  
+  Serial.println("Mounting file system...");
   bool isFSMounted = SPIFFS.begin();
   if (!isFSMounted) {
+    Serial.println("Formatting file system...");
+    drawProgress(50,"Formatting file system");
     SPIFFS.format();
   }
+  drawProgress(100,"Formatting done");
   //SPIFFS.remove("/calibration.txt");
   boolean isCalibrationAvailable = touchController.loadCalibration();
   if (!isCalibrationAvailable) {
@@ -200,19 +207,28 @@ void setup() {
 
 long lastDrew = 0;
 bool btnClick;
-
+uint8_t MAX_TOUCHPOINTS = 10;
+TS_Point points[10];
+uint8_t currentTouchPoint = 0;
 void loop() {
-
-  if (touchController.isTouched(500)) {
+  gfx.fillBuffer(MINI_BLACK);
+  if (touchController.isTouched(0)) {
     TS_Point p = touchController.getPoint();
+
     if (p.y < 80) {
       IS_STYLE_12HR = !IS_STYLE_12HR;
     } else {
       screen = (screen + 1) % screenCount;
     }
+    /*points[currentTouchPoint] = p;
+    currentTouchPoint = (currentTouchPoint+1) % MAX_TOUCHPOINTS;
+    for (uint8_t i = 0; i < MAX_TOUCHPOINTS; i++) {
+      TS_Point tsp = points[i];
+      gfx.drawCircle(tsp.x -5 , tsp.y - 5, 10);
+    }*/
   }
 
-  gfx.fillBuffer(MINI_BLACK);
+  
   if (screen == 0) {
     drawTime();
     drawWifiQuality();
@@ -230,7 +246,7 @@ void loop() {
   } else if (screen == 2) {
     drawForecastTable(0);
   } else if (screen == 3) {
-    drawForecastTable(6);
+    drawForecastTable(4);
   } else if (screen == 4) {
     drawAbout();
   }
@@ -263,37 +279,49 @@ void updateData() {
 
   drawProgress(10, "Updating time...");
   configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
+  while(!time(nullptr)) {
+    Serial.print("#");
+    delay(100);
+  }
+  // calculate for time calculation how much the dst class adds.
+  dstOffset = UTC_OFFSET * 3600 + dstAdjusted.time(nullptr) - time(nullptr);
+  Serial.printf("Time difference for DST: %d", dstOffset);
 
   drawProgress(50, "Updating conditions...");
-  WundergroundConditions *conditionsClient = new WundergroundConditions(IS_METRIC);
-  conditionsClient->updateConditions(&conditions, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
-  delete conditionsClient;
-  conditionsClient = nullptr;
+  OpenWeatherMapCurrent *currentWeatherClient = new OpenWeatherMapCurrent();
+  currentWeatherClient->setMetric(IS_METRIC);
+  currentWeatherClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
+  currentWeatherClient->updateCurrent(&currentWeather, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION);
+  delete currentWeatherClient;
+  currentWeatherClient = nullptr;
 
   drawProgress(70, "Updating forecasts...");
-  WundergroundForecast *forecastClient = new WundergroundForecast(IS_METRIC);
-  forecastClient->updateForecast(forecasts, MAX_FORECASTS, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
+  OpenWeatherMapForecast *forecastClient = new OpenWeatherMapForecast();
+  forecastClient->setMetric(IS_METRIC);
+  forecastClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
+  uint8_t allowedHours[] = {12, 0};
+  forecastClient->setAllowedHours(allowedHours, sizeof(allowedHours));
+  forecastClient->updateForecasts(forecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
   delete forecastClient;
   forecastClient = nullptr;
 
   drawProgress(80, "Updating astronomy...");
-  WundergroundAstronomy *astronomyClient = new WundergroundAstronomy(IS_STYLE_12HR);
-  astronomyClient->updateAstronomy(&astronomy, WUNDERGRROUND_API_KEY, WUNDERGRROUND_LANGUAGE, WUNDERGROUND_COUNTRY, WUNDERGROUND_CITY);
-  delete astronomyClient;
-  astronomyClient = nullptr;
-  moonAgeImage = String((char) (65 + 26 * (((15 + astronomy.moonAge.toInt()) % 30) / 30.0)));
-
+  Astronomy *astronomy = new Astronomy();
+  moonData = astronomy->calculateMoonData(time(nullptr));
+  moonAgeImage = String((char) (65 + ((uint8_t) (26 * moonData.illumination)) % 26 ));
+  delete astronomy;
+  astronomy = nullptr;
   delay(1000);
 }
 
 // Progress bar helper
 void drawProgress(uint8_t percentage, String text) {
   gfx.fillBuffer(MINI_BLACK);
-  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo);
+  gfx.drawPalettedBitmapFromPgm(20, 5, ThingPulseLogo);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 80, "https://thingpulse.com");
+  gfx.drawString(120, 90, "https://thingpulse.com");
   gfx.setColor(MINI_YELLOW);
 
   gfx.drawString(120, 146, text);
@@ -308,8 +336,8 @@ void drawProgress(uint8_t percentage, String text) {
 // draws the clock
 void drawTime() {
 
-  char *dstAbbrev;
   char time_str[11];
+  char *dstAbbrev;
   time_t now = dstAdjusted.time(&dstAbbrev);
   struct tm * timeinfo = localtime (&now);
 
@@ -346,61 +374,60 @@ void drawTime() {
 // draws current weather information
 void drawCurrentWeather() {
   gfx.setTransparentColor(MINI_BLACK);
-  gfx.drawPalettedBitmapFromPgm(0, 55, getMeteoconIconFromProgmem(conditions.weatherIcon));
+  gfx.drawPalettedBitmapFromPgm(0, 55, getMeteoconIconFromProgmem(currentWeather.icon));
   // Weather Text
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_BLUE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 65, DISPLAYED_CITY_NAME);
+  gfx.drawString(220, 65, currentWeather.cityName);
 
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  String degreeSign = "°F";
-  if (IS_METRIC) {
-    degreeSign = "°C";
-  }
-
-  String temp = conditions.currentTemp + degreeSign;
-      
-  gfx.drawString(220, 78, temp);
+   
+  gfx.drawString(220, 78, String(currentWeather.temp, 1) + (IS_METRIC ? "°C" : "°F"));
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_YELLOW);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 118, conditions.weatherText);
+  gfx.drawString(220, 118, currentWeather.description);
 
 }
 
 void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y) {
   drawForecastDetail(x + 10, y + 165, 0);
-  drawForecastDetail(x + 95, y + 165, 2);
-  drawForecastDetail(x + 180, y + 165, 4);
+  drawForecastDetail(x + 95, y + 165, 1);
+  drawForecastDetail(x + 180, y + 165, 2);
 }
 
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y) {
-  drawForecastDetail(x + 10, y + 165, 6);
-  drawForecastDetail(x + 95, y + 165, 8);
-  drawForecastDetail(x + 180, y + 165, 10);
+  drawForecastDetail(x + 10, y + 165, 3);
+  drawForecastDetail(x + 95, y + 165, 4);
+  drawForecastDetail(x + 180, y + 165, 5);
 }
 
+void drawForecast3(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y) {
+  drawForecastDetail(x + 10, y + 165, 6);
+  drawForecastDetail(x + 95, y + 165, 7);
+  drawForecastDetail(x + 180, y + 165, 8);
+}
 
 // helper for the forecast columns
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.setColor(MINI_YELLOW);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  String day = forecasts[dayIndex].forecastTitle.substring(0, 3);
-  day.toUpperCase();
-  gfx.drawString(x + 25, y - 15, day);
+  time_t time = forecasts[dayIndex].observationTime + dstOffset;
+  struct tm * timeinfo = localtime (&time);
+  gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
 
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
+  gfx.drawString(x + 25, y, String(forecasts[dayIndex].temp, 1) + (IS_METRIC ? "°C" : "°F"));
 
-  gfx.drawPalettedBitmapFromPgm(x, y + 15, getMiniMeteoconIconFromProgmem(forecasts[dayIndex].forecastIcon));
+  gfx.drawPalettedBitmapFromPgm(x, y + 15, getMiniMeteoconIconFromProgmem(forecasts[dayIndex].icon));
   gfx.setColor(MINI_BLUE);
-  gfx.drawString(x + 25, y + 60, forecasts[dayIndex].PoP + "%");
+  gfx.drawString(x + 25, y + 60, String(forecasts[dayIndex].rain, 1) + (IS_METRIC ? "mm" : "in"));
 }
 
 // draw moonphase and sunrise/set and moonrise/set
@@ -415,20 +442,23 @@ void drawAstronomy() {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(120, 250, astronomy.moonPhase);
+  gfx.drawString(120, 250, MOON_PHASES[moonData.phase]);
+  
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(5, 250, "Sun");
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(5, 276, astronomy.sunriseTime);
-  gfx.drawString(5, 291, astronomy.sunsetTime);
+  time_t time = currentWeather.sunrise + dstOffset;
+  gfx.drawString(5, 276, getTime(&time));
+  time = currentWeather.sunset + dstOffset;
+  gfx.drawString(5, 291, getTime(&time));
 
-  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
+  /*gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(235, 250, "Moon");
   gfx.setColor(MINI_WHITE);
   gfx.drawString(235, 276, astronomy.moonriseTime);
-  gfx.drawString(235, 291, astronomy.moonsetTime);
+  gfx.drawString(235, 291, astronomy.moonsetTime);*/
 
 }
 
@@ -447,21 +477,20 @@ void drawCurrentWeatherDetail() {
   }
   // String weatherIcon;
   // String weatherText;
-  drawLabelValue(0, "Temperature:", conditions.currentTemp + degreeSign);
-  drawLabelValue(1, "Feels Like:", conditions.feelslike + degreeSign);
-  drawLabelValue(2, "Dew Point:", conditions.dewPoint + degreeSign);
-  drawLabelValue(3, "Wind Speed:", conditions.windSpeed);
-  drawLabelValue(4, "Wind Dir:", conditions.windDir);
-  drawLabelValue(5, "Humidity:", conditions.humidity);
-  drawLabelValue(6, "Pressure:", conditions.pressure);
-  drawLabelValue(7, "Precipitation:", conditions.precipitationToday);
-  drawLabelValue(8, "UV:", conditions.UV);
+  drawLabelValue(0, "Temperature:", currentWeather.temp + degreeSign);
+  drawLabelValue(1, "Wind Speed:", String(currentWeather.windSpeed, 1) + (IS_METRIC ? "m/s" : "mph") );
+  drawLabelValue(2, "Wind Dir:", String(currentWeather.windDeg, 1) + "°");
+  drawLabelValue(3, "Humidity:", String(currentWeather.humidity) + "%");
+  drawLabelValue(4, "Pressure:", String(currentWeather.pressure) + "hPa");
+  drawLabelValue(5, "Clouds:", String(currentWeather.clouds) + "%");
+  drawLabelValue(6, "Visibility:", String(currentWeather.visibility) + "m");
 
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
+
+  /*gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(15, 185, "Description: ");
   gfx.setColor(MINI_WHITE);
-  gfx.drawStringMaxWidth(15, 200, 240 - 2 * 15, forecasts[0].forecastText);
+  gfx.drawStringMaxWidth(15, 200, 240 - 2 * 15, forecasts[0].forecastText);*/
 }
 
 void drawLabelValue(uint8_t line, String label, String value) {
@@ -511,48 +540,67 @@ void drawForecastTable(uint8_t start) {
   if (IS_METRIC) {
     degreeSign = "°C";
   }
-  for (uint8_t i = start; i < start + 6; i++) {
+  for (uint8_t i = start; i < start + 4; i++) {
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-    y = 30 + (i - start) * 45;
+    y = 45 + (i - start) * 75;
     if (y > 320) {
       break;
     }
-    gfx.drawPalettedBitmapFromPgm(0, y, getMiniMeteoconIconFromProgmem(forecasts[i].forecastIcon));
+    gfx.setColor(MINI_WHITE);
+    gfx.setTextAlignment(TEXT_ALIGN_CENTER);
+    time_t time = forecasts[i].observationTime + dstOffset;
+    struct tm * timeinfo = localtime (&time);
+    gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
 
+   
+    gfx.drawPalettedBitmapFromPgm(0, 15 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
+    gfx.setTextAlignment(TEXT_ALIGN_LEFT);
     gfx.setColor(MINI_YELLOW);
     gfx.setFont(ArialRoundedMTBold_14);
-
-    gfx.drawString(50, y, forecasts[i].forecastTitle);
-    gfx.setColor(MINI_WHITE);
-    gfx.drawString(50, y + 15, getShortText(forecasts[i].forecastIcon));
-    gfx.setColor(MINI_WHITE);
-    gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-
-    String temp = "";
-    if (i % 2 == 0) {
-      temp = forecasts[i].forecastHighTemp;
-    } else {
-      temp = forecasts[i - 1].forecastLowTemp;
-    }
-    gfx.drawString(235, y, temp + degreeSign);
-    /*gfx.setColor(MINI_WHITE);
-    gfx.drawString(x + 25, y, forecasts[dayIndex].forecastLowTemp + "|" + forecasts[dayIndex].forecastHighTemp);
-
-    gfx.drawPalettedBitmapFromPgm(x, y + 15, getMiniMeteoconIconFromProgmem(forecasts[dayIndex].forecastIcon));*/
+    gfx.drawString(10, y, forecasts[i].main);
+    gfx.setTextAlignment(TEXT_ALIGN_LEFT);
+    
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(235, y + 15, forecasts[i].PoP + "%");
+    gfx.drawString(50, y, "T:");
+    gfx.setColor(MINI_WHITE);
+    gfx.drawString(70, y, String(forecasts[i].temp, 0) + degreeSign);
+    
+    gfx.setColor(MINI_BLUE);
+    gfx.drawString(50, y + 15, "H:");
+    gfx.setColor(MINI_WHITE);
+    gfx.drawString(70, y + 15, String(forecasts[i].humidity) + "%");
+
+    gfx.setColor(MINI_BLUE);
+    gfx.drawString(50, y + 30, "P: ");
+    gfx.setColor(MINI_WHITE);
+    gfx.drawString(70, y + 30, String(forecasts[i].rain, 2) + (IS_METRIC ? "mm" : "in"));
+
+    gfx.setColor(MINI_BLUE);
+    gfx.drawString(130, y, "Pr:");
+    gfx.setColor(MINI_WHITE);
+    gfx.drawString(170, y, String(forecasts[i].pressure, 0) + "hPa");
+    
+    gfx.setColor(MINI_BLUE);
+    gfx.drawString(130, y + 15, "WSp:");
+    gfx.setColor(MINI_WHITE);
+    gfx.drawString(170, y + 15, String(forecasts[i].windSpeed, 0) + (IS_METRIC ? "m/s" : "mph") );
+
+    gfx.setColor(MINI_BLUE);
+    gfx.drawString(130, y + 30, "WDi: ");
+    gfx.setColor(MINI_WHITE);
+    gfx.drawString(170, y + 30, String(forecasts[i].windDeg, 0) + "°");
 
   }
 }
 
 void drawAbout() {
   gfx.fillBuffer(MINI_BLACK);
-  gfx.drawPalettedBitmapFromPgm(23, 30, SquixLogo);
+  gfx.drawPalettedBitmapFromPgm(20, 5, ThingPulseLogo);
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 80, "https://thingpulse.com");
+  gfx.drawString(120, 90, "https://thingpulse.com");
 
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -581,5 +629,13 @@ void drawAbout() {
 void calibrationCallback(int16_t x, int16_t y) {
   gfx.setColor(1);
   gfx.fillCircle(x, y, 10);
+}
+
+String getTime(time_t *timestamp) {
+  struct tm *timeInfo = gmtime(timestamp);
+  
+  char buf[6];
+  sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
+  return String(buf);
 }
 
