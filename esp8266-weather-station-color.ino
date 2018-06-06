@@ -123,6 +123,7 @@ int screenCount = 5;
 long lastDownloadUpdate = millis();
 
 String moonAgeImage = "";
+uint8_t moonAge = 0;
 uint16_t screen = 0;
 long timerPress;
 bool canBtnPress;
@@ -220,12 +221,6 @@ void loop() {
     } else {
       screen = (screen + 1) % screenCount;
     }
-    /*points[currentTouchPoint] = p;
-    currentTouchPoint = (currentTouchPoint+1) % MAX_TOUCHPOINTS;
-    for (uint8_t i = 0; i < MAX_TOUCHPOINTS; i++) {
-      TS_Point tsp = points[i];
-      gfx.drawCircle(tsp.x -5 , tsp.y - 5, 10);
-    }*/
   }
 
   
@@ -308,7 +303,9 @@ void updateData() {
   drawProgress(80, "Updating astronomy...");
   Astronomy *astronomy = new Astronomy();
   moonData = astronomy->calculateMoonData(time(nullptr));
-  moonAgeImage = String((char) (65 + ((uint8_t) (26 * moonData.illumination)) % 26 ));
+  float lunarMonth = 29.53;
+  moonAge = moonData.phase <= 4 ? lunarMonth * moonData.illumination / 2 : lunarMonth - moonData.illumination * lunarMonth / 2;
+  moonAgeImage = String((char) (65 + ((uint8_t) ((26 * moonAge / 30) % 26))));
   delete astronomy;
   astronomy = nullptr;
   delay(1000);
@@ -449,16 +446,20 @@ void drawAstronomy() {
   gfx.drawString(5, 250, "Sun");
   gfx.setColor(MINI_WHITE);
   time_t time = currentWeather.sunrise + dstOffset;
-  gfx.drawString(5, 276, getTime(&time));
+  gfx.drawString(5, 276, "Rise:");
+  gfx.drawString(45, 276, getTime(&time));
   time = currentWeather.sunset + dstOffset;
-  gfx.drawString(5, 291, getTime(&time));
+  gfx.drawString(5, 291, "Set:");
+  gfx.drawString(45, 291, getTime(&time));
 
-  /*gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
+  gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(235, 250, "Moon");
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(235, 276, astronomy.moonriseTime);
-  gfx.drawString(235, 291, astronomy.moonsetTime);*/
+  gfx.drawString(235, 276, String(moonAge) + "d");
+  gfx.drawString(235, 291, String(moonData.illumination * 100, 0) + "%");
+  gfx.drawString(200, 276, "Age:");
+  gfx.drawString(200, 291, "Illum:");
 
 }
 
