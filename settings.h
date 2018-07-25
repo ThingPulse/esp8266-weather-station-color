@@ -37,12 +37,10 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 #define HAVE_TOUCHPAD
 #define TOUCH_CS D3
 #define TOUCH_IRQ  D4
-    
 
 
 // OpenWeatherMap Settings
-// Sign up here to get an API key:
-// https://home.openweathermap.org/users/sign_up
+// Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
 const boolean IS_METRIC = true;
 String OPEN_WEATHER_MAP_APP_ID = "6bdd4d9d45a97d690103477a4c67c38f";
 String OPEN_WEATHER_MAP_LOCATION = "Zurich,CH";
