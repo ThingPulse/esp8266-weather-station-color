@@ -29,31 +29,19 @@ const int UPDATE_INTERVAL_SECS = 15 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
 
 
-// Pins for the ILI9341
-#define TFT_DC D2
-#define TFT_CS D1
-#define TFT_LED D8
-
-#define HAVE_TOUCHPAD
-#define TOUCH_CS D3
-#define TOUCH_IRQ  D4
-
-
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
-const boolean IS_METRIC = true;
-String OPEN_WEATHER_MAP_APP_ID = "6bdd4d9d45a97d690103477a4c67c38f";
+String OPEN_WEATHER_MAP_APP_ID = "";
 String OPEN_WEATHER_MAP_LOCATION = "Zurich,CH";
-
-// Pick a language code from this list:
-// Arabic - ar, Bulgarian - bg, Catalan - ca, Czech - cz, German - de, Greek - el,
-// English - en, Persian (Farsi) - fa, Finnish - fi, French - fr, Galician - gl,
-// Croatian - hr, Hungarian - hu, Italian - it, Japanese - ja, Korean - kr,
-// Latvian - la, Lithuanian - lt, Macedonian - mk, Dutch - nl, Polish - pl,
-// Portuguese - pt, Romanian - ro, Russian - ru, Swedish - se, Slovak - sk,
-// Slovenian - sl, Spanish - es, Turkish - tr, Ukrainian - ua, Vietnamese - vi,
-// Chinese Simplified - zh_cn, Chinese Traditional - zh_tw.
-
+/*
+Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
+English -> en, Persian (Farsi) -> fa, Finnish -> fi, French -> fr, Galician -> gl,
+Croatian -> hr, Hungarian -> hu, Italian -> it, Japanese -> ja, Korean -> kr,
+Latvian -> la, Lithuanian -> lt, Macedonian -> mk, Dutch -> nl, Polish -> pl,
+Portuguese -> pt, Romanian -> ro, Russian -> ru, Swedish -> se, Slovak -> sk,
+Slovenian -> sl, Spanish -> es, Turkish -> tr, Ukrainian -> ua, Vietnamese -> vi,
+Chinese Simplified -> zh_cn, Chinese Traditional -> zh_tw.
+*/
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
 const uint8_t MAX_FORECASTS = 10;
 
@@ -72,6 +60,8 @@ struct dstRule EndRule = {"CET", Last, Sun, Oct, 2, 0};       // Central Europea
 // struct dstRule StartRule = {"EDT", Second, Sun, Mar, 2, 3600}; // Eastern Daylight time = UTC/GMT -4 hours
 // struct dstRule EndRule = {"EST", First, Sun, Nov, 1, 0};       // Eastern Standard time = UTC/GMT -5 hour
 
+// values in metric or imperial system?
+const boolean IS_METRIC = true;
 
 // Change for 12 Hour/ 24 hour style clock
 bool IS_STYLE_12HR = false;
@@ -79,6 +69,18 @@ bool IS_STYLE_12HR = false;
 // change for different ntp (time servers)
 #define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
 // #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
+
+
+
+// Pins for the ILI9341
+#define TFT_DC D2
+#define TFT_CS D1
+#define TFT_LED D8
+
+#define HAVE_TOUCHPAD
+#define TOUCH_CS D3
+#define TOUCH_IRQ  D4
+
 
 /***************************
  * End Settings
