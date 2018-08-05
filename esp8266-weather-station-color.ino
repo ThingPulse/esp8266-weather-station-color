@@ -286,7 +286,7 @@ void updateData() {
   OpenWeatherMapCurrent *currentWeatherClient = new OpenWeatherMapCurrent();
   currentWeatherClient->setMetric(IS_METRIC);
   currentWeatherClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
-  currentWeatherClient->updateCurrent(&currentWeather, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION);
+  currentWeatherClient->updateCurrentById(&currentWeather, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID);
   delete currentWeatherClient;
   currentWeatherClient = nullptr;
 
@@ -296,7 +296,7 @@ void updateData() {
   forecastClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   uint8_t allowedHours[] = {12, 0};
   forecastClient->setAllowedHours(allowedHours, sizeof(allowedHours));
-  forecastClient->updateForecasts(forecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
+  forecastClient->updateForecastsById(forecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
   delete forecastClient;
   forecastClient = nullptr;
 

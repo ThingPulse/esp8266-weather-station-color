@@ -32,7 +32,13 @@ const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 f
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
 String OPEN_WEATHER_MAP_APP_ID = "";
-String OPEN_WEATHER_MAP_LOCATION = "Zurich,CH";
+/*
+Go to https://openweathermap.org/find?q= and search for a location. Go through the
+result set and select the entry closest to the actual location you want to display 
+data for. It'll be a URL like https://openweathermap.org/city/2657896. The number
+at the end is what you assign to the constant below.
+ */
+String OPEN_WEATHER_MAP_LOCATION_ID = "2657896";
 /*
 Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
 English -> en, Persian (Farsi) -> fa, Finnish -> fi, French -> fr, Galician -> gl,
