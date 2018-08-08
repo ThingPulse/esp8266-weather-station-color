@@ -39,6 +39,7 @@ data for. It'll be a URL like https://openweathermap.org/city/2657896. The numbe
 at the end is what you assign to the constant below.
  */
 String OPEN_WEATHER_MAP_LOCATION_ID = "2657896";
+String DISPLAYED_CITY_NAME = "Zurich";
 /*
 Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
 English -> en, Persian (Farsi) -> fa, Finnish -> fi, French -> fr, Galician -> gl,

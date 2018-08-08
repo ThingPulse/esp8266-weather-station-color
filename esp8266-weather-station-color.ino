@@ -377,7 +377,7 @@ void drawCurrentWeather() {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_BLUE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 65, currentWeather.cityName);
+  gfx.drawString(220, 65, DISPLAYED_CITY_NAME);
 
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
