@@ -136,6 +136,7 @@ void connectWifi() {
   Serial.print(WIFI_SSID);
   Serial.print("/");
   Serial.println(WIFI_PASS);
+  WiFi.disconnect();
   WiFi.mode(WIFI_STA);
   WiFi.hostname(WIFI_HOSTNAME);
   WiFi.begin(WIFI_SSID,WIFI_PASS);
@@ -341,8 +342,7 @@ void drawTime() {
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_WHITE);
-  String date = ctime(&now);
-  date = date.substring(0,11) + String(1900 + timeinfo->tm_year);
+  String date = WDAY_NAMES[timeinfo->tm_wday] + " " + MONTH_NAMES[timeinfo->tm_mon] + " " + String(timeinfo->tm_mday) + " " + String(1900 + timeinfo->tm_year);
   gfx.drawString(120, 6, date);
 
   gfx.setFont(ArialRoundedMTBold_36);
@@ -443,23 +443,23 @@ void drawAstronomy() {
   
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(5, 250, "Sun");
+  gfx.drawString(5, 250, SUN_MOON_TEXT[0]);
   gfx.setColor(MINI_WHITE);
   time_t time = currentWeather.sunrise + dstOffset;
-  gfx.drawString(5, 276, "Rise:");
+  gfx.drawString(5, 276, SUN_MOON_TEXT[1] + ":");
   gfx.drawString(45, 276, getTime(&time));
   time = currentWeather.sunset + dstOffset;
-  gfx.drawString(5, 291, "Set:");
+  gfx.drawString(5, 291, SUN_MOON_TEXT[2] + ":");
   gfx.drawString(45, 291, getTime(&time));
 
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(235, 250, "Moon");
+  gfx.drawString(235, 250, SUN_MOON_TEXT[3]);
   gfx.setColor(MINI_WHITE);
   gfx.drawString(235, 276, String(moonAge) + "d");
   gfx.drawString(235, 291, String(moonData.illumination * 100, 0) + "%");
-  gfx.drawString(200, 276, "Age:");
-  gfx.drawString(200, 291, "Illum:");
+  gfx.drawString(200, 276, SUN_MOON_TEXT[4] + ":");
+  gfx.drawString(200, 291, SUN_MOON_TEXT[5] + ":");
 
 }
 
@@ -639,4 +639,3 @@ String getTime(time_t *timestamp) {
   sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
   return String(buf);
 }
-
