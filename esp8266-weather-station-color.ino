@@ -306,7 +306,7 @@ void updateData() {
   moonData = astronomy->calculateMoonData(time(nullptr));
   float lunarMonth = 29.53;
   moonAge = moonData.phase <= 4 ? lunarMonth * moonData.illumination / 2 : lunarMonth - moonData.illumination * lunarMonth / 2;
-  moonAgeImage = String((char) (65 + ((uint8_t) ((26 * moonAge / 30) % 26))));
+  moonAgeImage = String((char) (65 + ((uint8_t) (((26 * moonAge / 30) + 14) % 26))));
   delete astronomy;
   astronomy = nullptr;
   delay(1000);
