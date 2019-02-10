@@ -1,42 +1,39 @@
-# esp8266-weather-station-color
+# ThingPulse ESP8266 Weather Station Color
 
-ESP8266 Weather Station in Color using ILI9341 TFT 240x320 display
+
+[![ThingPulse logo](https://thingpulse.com/assets/ThingPulse-w300.svg)](https://thingpulse.com)
+
+ESP8266 Weather Station Color using ILI9341 240x320 TFT display
 
 ## Hardware Requirements
 
-1. SQUIX
+The code in this project supports an ILI9341 240x320 TFT display with code running on an ESP8266. To get you up and running in no time we created a kit which contains all the necessary parts including a custom PCB to connect display and WiFi chip:
+[https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
-This code is made for an 240x320 65K ILI9341 display with code running on an ESP8266.
-Since it was sometimes complicated to find the right parts I created a kit which contains all the parts including the connector PCB:
-https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4
-By buying the kit from me you are supporting future development. Thank you!
+Buy the kit from us to support future development of this application. Thank you!
 
-[![Squix ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://blog.squix.org/product/esp8266-wifi-color-display-kit-2-4)
+[![ThingPulse ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
-2. AZSMZ TFT
+## Service level promise
 
-cxandy created a nice adaptation of this code to run with the hardware from AZSMZ:
-https://github.com/cxandy/esp8266-weather-station-color
+<table><tr><td><img src="https://thingpulse.com/assets/ThingPulse-open-source-prime.png" width="150">
+</td><td>This is a ThingPulse <em>prime</em> project. See our <a href="https://thingpulse.com/about/open-source-commitment/">open-source commitment declaration</a> for what this means.</td></tr></table>
 
+## Step-by-step tutorial
 
+A complete step-by-step tutorial/guide is available at [https://docs.thingpulse.com/guides/wifi-color-display-kit/](https://docs.thingpulse.com/guides/wifi-color-display-kit/).
 
-## Software Requirements/ Libraries
- * Mini Grafx by Daniel Eichhorn
- * ESP8266 WeatherStation by Daniel Eichhorn
- * Json Streaming Parser by Daniel Eichhorn
- * simpleDSTadjust by neptune2
+## Licensing, contributions and maintenance
 
-You also need to get an API key for the Wunderground data: https://www.wunderground.com/
+The code in this repository is licensed under [MIT](https://en.wikipedia.org/wiki/MIT_License), a short and simple permissive license with conditions only requiring preservation of copyright and license notices. Thus, you're free to fork the project and use the code for your own projects as long as you keep the copyright notices in place.
 
-## Settings
-Please have a good look at the settings.h file. There you can:
- * set your location for the weather information
- * Set the clock mode: 12hour (am/pm) or 24hour mode
- * Metric system for temperature
- * Timezone and daytime saving options
- * API key for the wunderground service
+ThingPulse is committed to open-source development and will continue to maintain this code. We welcome contributions from the community given they are roughly in line with our [guidelines](CONTRIBUTING.md). However, please understand that we primarily developed this application to be run on our own hardware kit mentioned above. It's the only platform we regularly test the code against. You are of course free to run the code on any hardware you think is compatible but you have to rely on community support should you run into problems. 
+
+ThingPulse runs a support forum for its customers that is better suited to answering user questions than the issues list here.
 
 ## Wiring
+
+The below wiring diagram is only needed when you do _not_ buy the self-contained kit from ThingPulse but rather assemble the components yourself.
 
 ![Wiring](resources/PlaneSpotterWiring.png)
 
