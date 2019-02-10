@@ -281,7 +281,7 @@ void updateData() {
   }
   // calculate for time calculation how much the dst class adds.
   dstOffset = UTC_OFFSET * 3600 + dstAdjusted.time(nullptr) - time(nullptr);
-  Serial.printf("Time difference for DST: %d", dstOffset);
+  Serial.printf("Time difference for DST: %d\n", dstOffset);
 
   drawProgress(50, "Updating conditions...");
   OpenWeatherMapCurrent *currentWeatherClient = new OpenWeatherMapCurrent();
