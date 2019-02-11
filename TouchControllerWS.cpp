@@ -30,7 +30,7 @@ bool TouchControllerWS::loadCalibration() {
 
   }
   f.close();
-
+  return true;
 }
 
 bool TouchControllerWS::saveCalibration() {
@@ -40,6 +40,7 @@ bool TouchControllerWS::saveCalibration() {
   File f = SPIFFS.open("/calibration.txt", "w");
   if (!f) {
     Serial.println("file creation failed");
+    return false;
   }
   // now write two lines in key/value style with  end-of-line characters
   f.println(dx);
@@ -48,6 +49,7 @@ bool TouchControllerWS::saveCalibration() {
   f.println(ay);
 
   f.close();
+  return true;
 }
 
 void TouchControllerWS::startCalibration(CalibrationCallback *calibrationCallback) {
