@@ -25,8 +25,8 @@ See more at http://blog.squix.ch
 #define WIFI_PASS "yourpassw0rd"
 #define WIFI_HOSTNAME "ThingPulse-weather-station-color"
 
-const int UPDATE_INTERVAL_SECS = 15 * 60; // Update every 10 minutes
-const int SLEEP_INTERVAL_SECS = 0;   // Going to Sleep after idle times, set 0 for dont sleep
+const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
+const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
 
 
 // OpenWeatherMap Settings
@@ -74,11 +74,12 @@ const boolean IS_METRIC = true;
 // Change for 12 Hour/ 24 hour style clock
 bool IS_STYLE_12HR = false;
 
-// change for different ntp (time servers)
+// change for different NTP (time servers)
 #define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
 // #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
 
-
+// August 1st, 2018
+#define NTP_MIN_VALID_EPOCH 1533081600
 
 // Pins for the ILI9341
 #define TFT_DC D2

@@ -30,6 +30,7 @@ See more at https://blog.squix.org
 
 #include <XPT2046_Touchscreen.h>
 #include "TouchControllerWS.h"
+#include "SunMoonCalc.h"
 
 
 /***
@@ -95,6 +96,7 @@ OpenWeatherMapCurrentData currentWeather;
 OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
 simpleDSTadjust dstAdjusted(StartRule, EndRule);
 Astronomy::MoonData moonData;
+//SunMoonCalc::Moon moonData;
 
 void updateData();
 void drawProgress(uint8_t percentage, String text);
@@ -122,8 +124,6 @@ int frameCount = 3;
 int screenCount = 5;
 long lastDownloadUpdate = millis();
 
-String moonAgeImage = "";
-uint8_t moonAge = 0;
 uint16_t screen = 0;
 long timerPress;
 bool canBtnPress;
@@ -180,7 +180,6 @@ void setup() {
     SPIFFS.format();
   }
   drawProgress(100,"Formatting done");
-  //SPIFFS.remove("/calibration.txt");
   boolean isCalibrationAvailable = touchController.loadCalibration();
   if (!isCalibrationAvailable) {
     Serial.println("Calibration not available");
@@ -269,18 +268,21 @@ void loop() {
 
 // Update the internet based information and update screen
 void updateData() {
+  time_t now;
 
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
 
   drawProgress(10, "Updating time...");
   configTime(UTC_OFFSET * 3600, 0, NTP_SERVERS);
-  while(!time(nullptr)) {
-    Serial.print("#");
-    delay(100);
+  while((now = time(nullptr)) < NTP_MIN_VALID_EPOCH) {
+    Serial.print(".");
+    delay(300);
   }
+  Serial.println();
+  Serial.printf("Current time: %d\n", now);
   // calculate for time calculation how much the dst class adds.
-  dstOffset = UTC_OFFSET * 3600 + dstAdjusted.time(nullptr) - time(nullptr);
+  dstOffset = UTC_OFFSET * 3600 + dstAdjusted.time(nullptr) - now;
   Serial.printf("Time difference for DST: %d\n", dstOffset);
 
   drawProgress(50, "Updating conditions...");
@@ -303,12 +305,18 @@ void updateData() {
 
   drawProgress(80, "Updating astronomy...");
   Astronomy *astronomy = new Astronomy();
-  moonData = astronomy->calculateMoonData(time(nullptr));
-  float lunarMonth = 29.53;
-  moonAge = moonData.phase <= 4 ? lunarMonth * moonData.illumination / 2 : lunarMonth - moonData.illumination * lunarMonth / 2;
-  moonAgeImage = String((char) (65 + ((uint8_t) ((26 * moonAge / 30) % 26))));
+  moonData = astronomy->calculateMoonData(now);
+  moonData.phase = astronomy->calculateMoonPhase(now);
   delete astronomy;
-  astronomy = nullptr;
+  astronomy = nullptr;  
+//https://github.com/ThingPulse/esp8266-weather-station/issues/144 prevents using this  
+//  // 'now' has to be UTC, lat/lng in degrees not raadians
+//  SunMoonCalc *smCalc = new SunMoonCalc(now - dstOffset, currentWeather.lat, currentWeather.lon);
+//  moonData = smCalc->calculateSunAndMoonData().moon;
+//  delete smCalc;
+//  smCalc = nullptr;
+  Serial.printf("Free mem: %d\n",  ESP.getFreeHeap());
+
   delay(1000);
 }
 
@@ -350,22 +358,20 @@ void drawTime() {
   if (IS_STYLE_12HR) {
     int hour = (timeinfo->tm_hour+11)%12+1;  // take care of noon and midnight
     sprintf(time_str, "%2d:%02d:%02d\n",hour, timeinfo->tm_min, timeinfo->tm_sec);
-    gfx.drawString(120, 20, time_str);
   } else {
     sprintf(time_str, "%02d:%02d:%02d\n",timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    gfx.drawString(120, 20, time_str);
   }
+  gfx.drawString(120, 20, time_str);
 
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setFont(ArialMT_Plain_10);
   gfx.setColor(MINI_BLUE);
   if (IS_STYLE_12HR) {
     sprintf(time_str, "%s\n%s", dstAbbrev, timeinfo->tm_hour>=12?"PM":"AM");
-    gfx.drawString(195, 27, time_str);
   } else {
     sprintf(time_str, "%s", dstAbbrev);
-    gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
   }
+  gfx.drawString(195, 27, time_str);  // Known bug: Cuts off 4th character of timezone abbreviation
 }
 
 // draws current weather information
@@ -433,7 +439,7 @@ void drawAstronomy() {
   gfx.setFont(MoonPhases_Regular_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.drawString(120, 275, moonAgeImage);
+  gfx.drawString(120, 275, String((char) (97 + (moonData.illumination * 26))));
 
   gfx.setColor(MINI_WHITE);
   gfx.setFont(ArialRoundedMTBold_14);
@@ -456,10 +462,12 @@ void drawAstronomy() {
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(235, 250, SUN_MOON_TEXT[3]);
   gfx.setColor(MINI_WHITE);
-  gfx.drawString(235, 276, String(moonAge) + "d");
+  float lunarMonth = 29.53;
+  // approximate moon age
+  gfx.drawString(235, 276, String(moonData.phase <= 4 ? lunarMonth * moonData.illumination / 2.0 : lunarMonth - moonData.illumination * lunarMonth / 2.0, 1) + "d");
   gfx.drawString(235, 291, String(moonData.illumination * 100, 0) + "%");
-  gfx.drawString(200, 276, SUN_MOON_TEXT[4] + ":");
-  gfx.drawString(200, 291, SUN_MOON_TEXT[5] + ":");
+  gfx.drawString(190, 276, SUN_MOON_TEXT[4] + ":");
+  gfx.drawString(190, 291, SUN_MOON_TEXT[5] + ":");
 
 }
 
@@ -485,13 +493,6 @@ void drawCurrentWeatherDetail() {
   drawLabelValue(4, "Pressure:", String(currentWeather.pressure) + "hPa");
   drawLabelValue(5, "Clouds:", String(currentWeather.clouds) + "%");
   drawLabelValue(6, "Visibility:", String(currentWeather.visibility) + "m");
-
-
-  /*gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.setColor(MINI_YELLOW);
-  gfx.drawString(15, 185, "Description: ");
-  gfx.setColor(MINI_WHITE);
-  gfx.drawStringMaxWidth(15, 200, 240 - 2 * 15, forecasts[0].forecastText);*/
 }
 
 void drawLabelValue(uint8_t line, String label, String value) {
