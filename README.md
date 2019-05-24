@@ -12,7 +12,7 @@ The code in this project supports an ILI9341 240x320 TFT display with code runni
 
 Buy the kit from us to support future development of this application. Thank you!
 
-[![ThingPulse ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.png)](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
+[![ThingPulse ESP8266 Color Display Kit](resources/ESP8266ColorDisplayKit.jpg)](https://thingpulse.com/product/esp8266-wifi-color-display-kit-2-4/)
 
 ## Service level promise
 
@@ -33,23 +33,4 @@ ThingPulse runs a support forum for its customers that is better suited to answe
 
 ## Wiring
 
-The below wiring diagram is only needed when you do _not_ buy the self-contained kit from ThingPulse but rather assemble the components yourself.
-
-![Wiring](resources/PlaneSpotterWiring.png)
-
-| Wemos D1 Mini | ILI9341      |
-| ------------- |:-------------:|
-| D4            | T_IRQ         |
-| D6            | T_DO          |
-| D7            | T_DIN         |
-| D3            | T_CS          |
-| D5            | T_CLK         |
-| D6            | SDO           |
-| D8            | LED           |
-| D5            | SCK           |
-| D7            | SDI           |
-| D2            | D/C           |
-| RST           | RESET         |
-| D1            | CS            |
-| GND           | GND           |
-| 3V3           | VCC           |
+The [wiring diagram](https://docs.thingpulse.com/specs/wifi-color-display-kit/#wiring) is only needed when you do _not_ buy the self-contained kit from ThingPulse but rather assemble the components yourself. The kit provides a custom PCB that solidly connects microcontroller and display.
