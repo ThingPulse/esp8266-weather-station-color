@@ -50,7 +50,6 @@ Slovenian -> sl, Spanish -> es, Turkish -> tr, Ukrainian -> ua, Vietnamese -> vi
 Chinese Simplified -> zh_cn, Chinese Traditional -> zh_tw.
 */
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
-const uint8_t MAX_FORECASTS = 10;
 
 // Adjust according to your language
 const String WDAY_NAMES[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
