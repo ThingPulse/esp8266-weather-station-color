@@ -87,9 +87,9 @@ TouchControllerWS touchController(&ts);
 void calibrationCallback(int16_t x, int16_t y);
 CalibrationCallback calibration = &calibrationCallback;
 
-
 OpenWeatherMapCurrentData currentWeather;
 OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
+
 SunMoonCalc::Moon moonData;
 
 void updateData();
@@ -100,6 +100,7 @@ void drawCurrentWeather();
 void drawForecast();
 void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
 void drawAstronomy();
+char determineMoonIcon();
 void drawCurrentWeatherDetail();
 void drawLabelValue(uint8_t line, String label, String value);
 void drawForecastTable(uint8_t start);
@@ -386,8 +387,8 @@ void updateData() {
   delete forecastClient;
   forecastClient = nullptr;
 
-  drawProgress(80, "Updating astronomy data...");
-  // 'now' has to be UTC, lat/lng in degrees not radians
+  drawProgress(80, "Updating astronomy...");
+  // 'now' has to be epoch instant, lat/lng in degrees not radians
   SunMoonCalc *smCalc = new SunMoonCalc(now, currentWeather.lat, currentWeather.lon);
   moonData = smCalc->calculateSunAndMoonData().moon;
   delete smCalc;
@@ -519,13 +520,14 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.drawString(x + 25, y + 60, String(forecasts[dayIndex].rain, 1) + (IS_METRIC ? "mm" : "in"));
 }
 
-// draw moonphase and sunrise/set and moonrise/set
+// draw moonphase, sunrise/set and moonrise/set
 void drawAstronomy() {
 
   gfx.setFont(MoonPhases_Regular_36);
   gfx.setColor(MINI_WHITE);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.drawString(120, 275, String((char) (97 + (moonData.illumination * 26))));
+  // gfx.drawString(120, 275, String((char) (97 + (moonData.illumination * 26))));
+  gfx.drawString(120, 275, String(determineMoonIcon()));
 
   gfx.setColor(MINI_WHITE);
   gfx.setFont(ArialRoundedMTBold_14);
@@ -548,10 +550,33 @@ void drawAstronomy() {
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(235, 250, SUN_MOON_TEXT[3]);
   gfx.setColor(MINI_WHITE);
+
+  float lunarMonth = 29.53;
+  // approximate moon age
   gfx.drawString(190, 276, SUN_MOON_TEXT[4] + ":");
   gfx.drawString(235, 276, String(moonData.age, 1) + "d");
   gfx.drawString(190, 291, SUN_MOON_TEXT[5] + ":");
   gfx.drawString(235, 291, String(moonData.illumination * 100, 0) + "%");
+}
+
+// The Moon Phases font has 26 icons for gradiations, 1 full icon, and 1 empty icon: https://www.dafont.com/moon-phases.font
+// All of them are an approximation. 
+// Depending on date and location they would have to be rotated left or right by a varying degree.
+// GOTCHA  I: as we use white to display the moon icon, what is black on that font page (link above) will effectively be rendered white!
+// GOTCHA II: illumination in the range {0,1} will with near certainty never be exactly 0 or 1; rounding is, therefore, essential to ever get full/new moon!
+char determineMoonIcon() {
+  char moonIcon;
+  // index in range of 0..14
+  char index = round(moonData.illumination * 14);
+//  Serial.printf("Moon illumination: %f -> moon icon index: %d\n", moonData.illumination, index);
+  if (moonData.phase.index > 4) {
+    // waning (4 = full moon)
+    moonIcon = currentWeather.lat > 0 ? MOON_ICONS_NORTH_WANING[index] : MOON_ICONS_SOUTH_WANING[index];
+  } else {
+    // waxing
+    moonIcon = currentWeather.lat > 0 ? MOON_ICONS_NORTH_WAXING[index] : MOON_ICONS_SOUTH_WAXING[index];
+  }
+  return moonIcon;
 }
 
 void drawCurrentWeatherDetail() {
@@ -791,6 +816,8 @@ void loadPropertiesFromSpiffs() {
           Serial.printf(msg, "is12hStyle");
         }
       }
+    } else {
+      Serial.println("Does not exist.");
     }
     f.close();
     Serial.println("Effective properties now as follows:");

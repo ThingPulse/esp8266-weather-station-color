@@ -37,6 +37,7 @@ const boolean HARD_SLEEP = false;         // true go into deepSleep false = turn
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
 String OPEN_WEATHER_MAP_API_KEY = "";
+
 /*
 Go to https://openweathermap.org/find?q= and search for a location. Go through the
 result set and select the entry closest to the actual location you want to display 
@@ -45,6 +46,13 @@ at the end is what you assign to the constant below.
  */
 String OPEN_WEATHER_MAP_LOCATION_ID = "2657896";
 String DISPLAYED_LOCATION_NAME = "Zurich";
+//String OPEN_WEATHER_MAP_LOCATION_ID = "3833367";
+//String DISPLAYED_LOCATION_NAME = "Ushuaia";
+//String OPEN_WEATHER_MAP_LOCATION_ID = "2147714";
+//String DISPLAYED_LOCATION_NAME = "Sydney";
+//String OPEN_WEATHER_MAP_LOCATION_ID = "5879400";
+//String DISPLAYED_LOCATION_NAME = "Anchorage";
+
 /*
 Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
 English -> en, Persian (Farsi) -> fa, Finnish -> fi, French -> fr, Galician -> gl,
@@ -78,6 +86,15 @@ bool IS_STYLE_HHMM = false; // true => HH:MM
 // change for different NTP (time servers)
 #define NTP_SERVERS "pool.ntp.org"
 // #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
+
+// Locations on the northern hemisphere (latitude > 0) and those on the southern hemisphere need 
+// an inverted set of moon phase icons/characters.
+// fully illuminated -> full moon -> char 48
+// zero illumination -> new moon -> char 64
+const char MOON_ICONS_NORTH_WANING[] = {64, 77, 76, 75, 74, 73, 72, 71, 70, 69, 68, 67, 66, 65, 48};
+const char MOON_ICONS_NORTH_WAXING[] = {64, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 48};
+const char MOON_ICONS_SOUTH_WANING[] = {64, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 48};
+const char MOON_ICONS_SOUTH_WAXING[] = {64, 77, 76, 75, 74, 73, 72, 71, 70, 69, 68, 67, 66, 65, 48};
 
 // August 1st, 2018
 #define NTP_MIN_VALID_EPOCH 1533081600
