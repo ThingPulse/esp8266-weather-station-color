@@ -88,7 +88,7 @@ bool TouchControllerWS::isCalibrationFinished() {
 }
 
 bool TouchControllerWS::isTouched() {
-  touchScreen->touched();
+  return touchScreen->touched();
 }
 
 bool TouchControllerWS::isTouched(int16_t debounceMillis) {
