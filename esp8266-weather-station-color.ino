@@ -126,6 +126,7 @@ long lastDownloadUpdate = millis();
 uint16_t screen = 0;
 long timerPress;
 bool canBtnPress;
+bool sleep_mode();
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
@@ -231,60 +232,101 @@ TS_Point points[10];
 uint8_t currentTouchPoint = 0;
 
 void loop() {
+  static bool asleep = false; //  asleep used to stop screen change after touch for wake-up
   gfx.fillBuffer(MINI_BLACK);
   if (touchController.isTouched(0)) {
     TS_Point p = touchController.getPoint();
+    timerPress = millis();
 
     Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
-
-    if (p.y < 80) {
-      IS_STYLE_12HR = !IS_STYLE_12HR;
-    } else {
-      screen = (screen + 1) % screenCount;
+    if (!asleep) { // no need to change screens;
+      if (p.y < 80) {
+        IS_STYLE_12HR = !IS_STYLE_12HR;
+      } else {
+        screen = (screen + 1) % screenCount;
+      }
     }
-  }
+  } // isTouched()
 
-  if (screen == 0) {
-    drawTime();
-    drawWifiQuality();
-    int remainingTimeBudget = carousel.update();
-    if (remainingTimeBudget > 0) {
-      // You can do some work here
-      // Don't do stuff if you are below your
-      // time budget.
-      delay(remainingTimeBudget);
+  if (!(asleep = sleep_mode())) {
+    if (screen == 0) {
+      drawTime();
+
+      drawWifiQuality();
+      int remainingTimeBudget = carousel.update();
+      if (remainingTimeBudget > 0) {
+        // You can do some work here
+        // Don't do stuff if you are below your
+        // time budget.
+        delay(remainingTimeBudget);
+      }
+      drawCurrentWeather();
+      drawAstronomy();
+    } else if (screen == 1) {
+      drawCurrentWeatherDetail();
+    } else if (screen == 2) {
+      drawForecastTable(0);
+    } else if (screen == 3) {
+      drawForecastTable(4);
+    } else if (screen == 4) {
+      drawAbout();
     }
-    drawCurrentWeather();
-    drawAstronomy();
-  } else if (screen == 1) {
-    drawCurrentWeatherDetail();
-  } else if (screen == 2) {
-    drawForecastTable(0);
-  } else if (screen == 3) {
-    drawForecastTable(4);
-  } else if (screen == 4) {
-    drawAbout();
-  }
-  gfx.commit();
+    gfx.commit();
 
-  // Check if we should update weather information
-  if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
-    updateData();
-    lastDownloadUpdate = millis();
-  }
-
-  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after 2 minutes go to sleep
-    drawProgress(25, "Going to Sleep!");
-    delay(1000);
-    drawProgress(50, "Going to Sleep!");
-    delay(1000);
-    drawProgress(75, "Going to Sleep!");
-    delay(1000);
-    drawProgress(100, "Going to Sleep!");
-    // go to deepsleep for xx minutes or 0 = permanently
-    ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
-  }
+    // Check if we should update weather information
+    if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
+      updateData();
+      lastDownloadUpdate = millis();
+    }
+  } //sleeping
 }
+
+/*
+
+  	Check and activate when it is time to go to sleep
+
+  	parameters:	(defined in settings)
+  	 	SLEEP_INTERVAL_SECS 	time between screen touches in seconds before activating sleep mode
+  	 	HARD_SLEEP			 	true  -> deep sleep requiring interrupt or reset to wake
+  	 							false -> soft sleep turning off backlight wake with screen press
+
+  	returns: true when sleep mode is active
+*/
+bool sleep_mode() {
+  static bool sleeping = false; // no need to waste time painting going to sleep screens
+  if (SLEEP_INTERVAL_SECS
+      && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after 2 minutes go to sleep
+    if (true == sleeping)
+      return sleeping;  // all-ready asleep
+
+    int s = 0;
+    do {
+      drawProgress(s, "Going to Sleep!");
+      delay(10);
+      yield();
+    } while (s++ < 100 && !touchController.isTouched(0));
+    if (s < 100) {                         // early exit abort
+      timerPress = millis();               // reset sleep timeout
+      touchController.getPoint();          // throw away
+      if (touchController.isTouched(0))    // resets lastTouched
+        touchController.getPoint();        // throw away
+    } else {
+      sleeping = true;
+      if (true == HARD_SLEEP) {
+        // go to deepsleep for xx minutes or 0 = permanently
+        ESP.deepSleep(0, WAKE_RF_DEFAULT); // 0 delay = permanently to sleep
+      } else {
+        digitalWrite(TFT_LED, LOW);        // Back light OFF
+      }
+    }
+  } else {                                 // Not time to sleep
+    if (sleeping) {                        // Wake up
+      digitalWrite(TFT_LED, HIGH);         // Back light ON
+      sleeping = false;
+    }
+  }
+  return sleeping;  // used to prevent screen changes on wake-up screen press
+}	// sleep_mode()
 
 // Update the internet based information and update screen
 void updateData() {

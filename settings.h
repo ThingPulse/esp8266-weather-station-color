@@ -20,18 +20,21 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
  */
-
+#ifndef SETTINGS_H
+#define SETTINGS_H
 #include <Arduino.h>
 #include <TZ.h>
 
 // Setup
-#define WIFI_SSID "yourssid"
-#define WIFI_PASS "yourpassw0rd"
+//#define WIFI_SSID "yourssid"
+//#define WIFI_PASS "yourpassw0rd"
+#define WIFI_SSID "DeadEnd2"
+#define WIFI_PASS "kjerstipass"
 #define WIFI_HOSTNAME "ThingPulse-weather-station-color"
 
-const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
-const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
-
+const int UPDATE_INTERVAL_SECS = 30; //10 * 60; // Update every 10 minutes
+const int SLEEP_INTERVAL_SECS = 15;       // Going to sleep after idle times, set 0 for insomnia
+const boolean HARD_SLEEP = false;         // true go into deepSleep false = turn Back light off
 
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
@@ -91,3 +94,4 @@ bool IS_STYLE_12HR = false;
 /***************************
  * End Settings
  **************************/
+#endif
