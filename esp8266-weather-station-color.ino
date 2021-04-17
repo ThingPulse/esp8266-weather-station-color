@@ -278,7 +278,7 @@ void loop() {
       updateData();
       lastDownloadUpdate = millis();
     }
-  } //sleeping
+  } //!asleep
 }
 
 /*

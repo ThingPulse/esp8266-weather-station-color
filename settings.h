@@ -31,7 +31,7 @@
 #define WIFI_HOSTNAME "ThingPulse-weather-station-color"
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
-const int SLEEP_INTERVAL_SECS = 0;       // Going to sleep after idle times, set 0 for insomnia
+const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
 const boolean HARD_SLEEP = false;         // true go into deepSleep false = turn Back light off
 
 // OpenWeatherMap Settings
