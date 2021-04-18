@@ -127,6 +127,7 @@ uint16_t screen = 0;
 long timerPress;
 bool canBtnPress;
 bool sleep_mode();
+char* make12_24(int hour);
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
@@ -468,7 +469,12 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   time_t time = forecasts[dayIndex].observationTime;
   struct tm * timeinfo = localtime (&time);
-  gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+    //  Added 24hr / 12hr conversion  // 
+    if(IS_STYLE_12HR){
+    gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(make12_24(timeinfo->tm_hour)));
+  } else {
+    gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+  }
 
   gfx.setColor(MINI_WHITE);
   gfx.drawString(x + 25, y, String(forecasts[dayIndex].temp, 1) + (IS_METRIC ? "°C" : "°F"));
@@ -594,7 +600,12 @@ void drawForecastTable(uint8_t start) {
     gfx.setTextAlignment(TEXT_ALIGN_CENTER);
     time_t time = forecasts[i].observationTime;
     struct tm * timeinfo = localtime (&time);
-    gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+    //  Added 24hr / 12hr conversion  // 
+        if(IS_STYLE_12HR){
+      gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(make12_24(timeinfo->tm_hour)));
+    } else {
+      gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+    }
 
 
     gfx.drawPalettedBitmapFromPgm(0, 15 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
@@ -674,10 +685,39 @@ void calibrationCallback(int16_t x, int16_t y) {
   gfx.fillCircle(x, y, 10);
 }
 
+//  Added 24hr / 12hr conversion  // 
 String getTime(time_t *timestamp) {
   struct tm *timeInfo = localtime(timestamp);
 
-  char buf[6];
-  sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
+  //char buf[6];
+  char buf[9];  // "12:34 pm\0"
+  char ampm[3]; ampm[0]='\0'; //Ready for 24hr clock
+  uint8_t hour = timeInfo->tm_hour;
+
+  if(IS_STYLE_12HR){
+    if(hour > 12){
+      hour = hour - 12;
+      sprintf(ampm,"pm");
+    } else {
+      sprintf(ampm,"am");
+    }
+   }
+  sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
   return String(buf);
+}
+
+/*
+ *  Convert hour from 24 hr time to 12 hr time
+ *  @return cString with 2 digit hour + am or pm 
+ *
+ */
+char* make12_24(int hour){
+  static char hr[6];
+  if(hour > 12){
+    sprintf(hr, "%02d pm", (hour -12) );
+    //sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
+  } else {
+    sprintf(hr, "%02d am", hour);
+  }
+  return hr;
 }
