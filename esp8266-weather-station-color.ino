@@ -701,8 +701,10 @@ String getTime(time_t *timestamp) {
     } else {
       sprintf(ampm,"am");
     }
+    sprintf(buf, "%2d:%02d %s", hour, timeInfo->tm_min, ampm);
+   } else {
+    sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
    }
-  sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
   return String(buf);
 }
 
