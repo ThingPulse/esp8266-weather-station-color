@@ -714,10 +714,10 @@ String getTime(time_t *timestamp) {
 char* make12_24(int hour){
   static char hr[6];
   if(hour > 12){
-    sprintf(hr, "%02d pm", (hour -12) );
+    sprintf(hr, "%2d pm", (hour -12) );
     //sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
   } else {
-    sprintf(hr, "%02d am", hour);
+    sprintf(hr, "%2d am", hour);
   }
   return hr;
 }
