@@ -22,11 +22,11 @@
  */
 
 #include <Arduino.h>
-#include <TZ.h>
+#include "TZinfo.h"
 
 // Setup
-#define WIFI_SSID "yourssid"
-#define WIFI_PASS "yourpassw0rd"
+String WIFI_SSID = "yourssid";
+String WIFI_PASS = "yourpassw0rd";
 #define WIFI_HOSTNAME "ThingPulse-weather-station-color"
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
@@ -35,7 +35,7 @@ const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, se
 
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
-String OPEN_WEATHER_MAP_APP_ID = "";
+String OPEN_WEATHER_MAP_API_KEY = "";
 /*
 Go to https://openweathermap.org/find?q= and search for a location. Go through the
 result set and select the entry closest to the actual location you want to display 
@@ -43,7 +43,7 @@ data for. It'll be a URL like https://openweathermap.org/city/2657896. The numbe
 at the end is what you assign to the constant below.
  */
 String OPEN_WEATHER_MAP_LOCATION_ID = "2657896";
-String DISPLAYED_CITY_NAME = "Zurich";
+String DISPLAYED_LOCATION_NAME = "Zurich";
 /*
 Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
 English -> en, Persian (Farsi) -> fa, Finnish -> fi, French -> fr, Galician -> gl,
@@ -53,7 +53,7 @@ Portuguese -> pt, Romanian -> ro, Russian -> ru, Swedish -> se, Slovak -> sk,
 Slovenian -> sl, Spanish -> es, Turkish -> tr, Ukrainian -> ua, Vietnamese -> vi,
 Chinese Simplified -> zh_cn, Chinese Traditional -> zh_tw.
 */
-String OPEN_WEATHER_MAP_LANGUAGE = "en";
+const String OPEN_WEATHER_MAP_LANGUAGE = "en";
 
 // Adjust according to your language
 const String WDAY_NAMES[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
@@ -62,17 +62,17 @@ const String SUN_MOON_TEXT[] = {"Sun", "Rise", "Set", "Moon", "Age", "Illum"};
 const String MOON_PHASES[] = {"New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
                               "Full Moon", "Waning Gibbous", "Third quarter", "Waning Crescent"};
 
-// pick one from https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h
-#define TIMEZONE TZ_Europe_Zurich
+// pick one from TZinfo.h
+String TIMEZONE = getTzInfo("Europe/Zurich");
 
 // values in metric or imperial system?
-const boolean IS_METRIC = true;
+bool IS_METRIC = true;
 
 // Change for 12 Hour/ 24 hour style clock
 bool IS_STYLE_12HR = false;
 
 // change for different NTP (time servers)
-#define NTP_SERVERS "0.ch.pool.ntp.org", "1.ch.pool.ntp.org", "2.ch.pool.ntp.org"
+#define NTP_SERVERS "pool.ntp.org"
 // #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
 
 // August 1st, 2018

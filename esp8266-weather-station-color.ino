@@ -116,6 +116,8 @@ const char* getMiniMeteoconIconFromProgmem(String iconText);
 void drawForecast1(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void drawForecast2(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
 void drawForecast3(MiniGrafx *display, CarouselState* state, int16_t x, int16_t y);
+void loadPropertiesFromSpiffs();
+
 FrameCallback frames[] = { drawForecast1, drawForecast2, drawForecast3 };
 int frameCount = 3;
 
@@ -130,20 +132,20 @@ bool canBtnPress;
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
   //Manual Wifi
-  Serial.printf("Connecting to WiFi %s/%s", WIFI_SSID, WIFI_PASS);
+  Serial.printf("Connecting to WiFi %s/%s", WIFI_SSID.c_str(), WIFI_PASS.c_str());
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
   WiFi.hostname(WIFI_HOSTNAME);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(WIFI_SSID.c_str(), WIFI_PASS.c_str());
   int i = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     if (i > 80) i = 0;
-    drawProgress(i, "Connecting to WiFi '" + String(WIFI_SSID) + "'");
+    drawProgress(i, "Connecting to WiFi '" + String(WIFI_SSID.c_str()) + "'");
     i += 10;
     Serial.print(".");
   }
-  drawProgress(100, "Connected to WiFi '" + String(WIFI_SSID) + "'");
+  drawProgress(100, "Connected to WiFi '" + String(WIFI_SSID.c_str()) + "'");
   Serial.println("connected.");
 }
 
@@ -153,8 +155,8 @@ void initTime() {
   gfx.fillBuffer(MINI_BLACK);
   gfx.setFont(ArialRoundedMTBold_14);
 
-  Serial.printf("Configuring time for timezone %s\n", TIMEZONE);
-  configTime(TIMEZONE, NTP_SERVERS);
+  Serial.printf("Configuring time for timezone %s\n", TIMEZONE.c_str());
+  configTime(TIMEZONE.c_str(), NTP_SERVERS);
   int i = 1;
   while ((now = time(nullptr)) < NTP_MIN_VALID_EPOCH) {
     drawProgress(i * 10, "Updating time...");
@@ -172,6 +174,8 @@ void initTime() {
 
 void setup() {
   Serial.begin(115200);
+
+  loadPropertiesFromSpiffs();
 
   // The LED pin needs to set HIGH
   // Use this pin to save energy
@@ -297,7 +301,7 @@ void updateData() {
   OpenWeatherMapCurrent *currentWeatherClient = new OpenWeatherMapCurrent();
   currentWeatherClient->setMetric(IS_METRIC);
   currentWeatherClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
-  currentWeatherClient->updateCurrentById(&currentWeather, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID);
+  currentWeatherClient->updateCurrentById(&currentWeather, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION_ID);
   delete currentWeatherClient;
   currentWeatherClient = nullptr;
 
@@ -307,7 +311,7 @@ void updateData() {
   forecastClient->setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   uint8_t allowedHours[] = {12, 0};
   forecastClient->setAllowedHours(allowedHours, sizeof(allowedHours));
-  forecastClient->updateForecastsById(forecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
+  forecastClient->updateForecastsById(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
   delete forecastClient;
   forecastClient = nullptr;
 
@@ -387,7 +391,7 @@ void drawCurrentWeather() {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setColor(MINI_BLUE);
   gfx.setTextAlignment(TEXT_ALIGN_RIGHT);
-  gfx.drawString(220, 65, DISPLAYED_CITY_NAME);
+  gfx.drawString(220, 65, DISPLAYED_LOCATION_NAME);
 
   gfx.setFont(ArialRoundedMTBold_36);
   gfx.setColor(MINI_WHITE);
@@ -638,4 +642,56 @@ String getTime(time_t *timestamp) {
   char buf[6];
   sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
   return String(buf);
+}
+
+void loadPropertiesFromSpiffs() {
+  if (SPIFFS.begin()) {
+    const char *msg = "Using '%s' from SPIFFS\n";
+    Serial.println("Attempting to read application.properties file from SPIFFS.");
+    File f = SPIFFS.open("/application.properties", "r");
+    if (f) {
+      Serial.println("File exists. Reading and assigning properties.");
+      while (f.available()) {
+        String key = f.readStringUntil('=');
+        String value = f.readStringUntil('\n');
+        if (key == "ssid") {
+          WIFI_SSID = value.c_str();
+          Serial.printf(msg, "ssid");
+        } else if (key == "password") {
+          WIFI_PASS = value.c_str();
+          Serial.printf(msg, "password");
+        } else if (key == "timezone") {
+          TIMEZONE = getTzInfo(value.c_str());
+          Serial.printf(msg, "timezone");
+        } else if (key == "owmApiKey") {
+          OPEN_WEATHER_MAP_API_KEY = value.c_str();
+          Serial.printf(msg, "owmApiKey");
+        } else if (key == "owmLocationId") {
+          OPEN_WEATHER_MAP_LOCATION_ID = value.c_str();
+          Serial.printf(msg, "owmLocationId");
+        } else if (key == "locationName") {
+          DISPLAYED_LOCATION_NAME = value.c_str();
+          Serial.printf(msg, "locationName");
+        } else if (key == "isMetric") {
+          IS_METRIC = value == "true" ? true : false;
+          Serial.printf(msg, "isMetric");  
+        } else if (key == "is12hStyle") {
+          IS_STYLE_12HR = value == "true" ? true : false;
+          Serial.printf(msg, "is12hStyle");
+        }
+      }
+    }
+    f.close();
+    Serial.println("Effective properties now as follows:");
+    Serial.println("\tssid: " + WIFI_SSID);
+    Serial.println("\tpassword: " + WIFI_PASS);
+    Serial.println("\timezone: " + TIMEZONE);
+    Serial.println("\tOWM API key: " + OPEN_WEATHER_MAP_API_KEY);
+    Serial.println("\tOWM location id: " + OPEN_WEATHER_MAP_LOCATION_ID);
+    Serial.println("\tlocation name: " + DISPLAYED_LOCATION_NAME);
+    Serial.println("\tmetric: " + String(IS_METRIC ? "true" : "false"));
+    Serial.println("\t12h style: " + String(IS_STYLE_12HR ? "true" : "false"));
+  } else {
+    Serial.println("SPIFFS mount failed.");
+  }
 }
