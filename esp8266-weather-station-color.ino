@@ -147,6 +147,8 @@ void connectWifi() {
   }
   drawProgress(100, "Connected to WiFi '" + String(WIFI_SSID.c_str()) + "'");
   Serial.println("connected.");
+  Serial.printf("Connected, IP address: %s/%s\n", WiFi.localIP().toString().c_str(), WiFi.subnetMask().toString().c_str()); //Get ip and subnet mask
+  Serial.printf("Connected, MAC address: %s\n", WiFi.macAddress().c_str());  //Get the local mac address
 }
 
 void initTime() {
@@ -633,11 +635,12 @@ void drawAbout() {
   uint8_t minutes = (millis() - (days * millis_in_day) - (hours * millis_in_hour)) / millis_in_minute;
   sprintf(time_str, "%2dd%2dh%2dm", days, hours, minutes);
   drawLabelValue(13, "Uptime: ", time_str);
+  drawLabelValue(14, "IP Address: ", WiFi.localIP().toString());
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(15, 250, "Last Reset: ");
+  gfx.drawString(15, 280, "Last Reset: ");
   gfx.setColor(MINI_WHITE);
-  gfx.drawStringMaxWidth(15, 265, 240 - 2 * 15, ESP.getResetInfo());
+  gfx.drawStringMaxWidth(15, 295, 240 - 2 * 15, ESP.getResetInfo());
 }
 
 void calibrationCallback(int16_t x, int16_t y) {
