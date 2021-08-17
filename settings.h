@@ -71,6 +71,9 @@ bool IS_METRIC = true;
 // Change for 12 Hour/ 24 hour style clock
 bool IS_STYLE_12HR = false;
 
+// Change for HH:MM/ HH:MM:SS format clock
+bool IS_STYLE_HHMM = false; // true => HH:MM
+
 // change for different NTP (time servers)
 #define NTP_SERVERS "pool.ntp.org"
 // #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
