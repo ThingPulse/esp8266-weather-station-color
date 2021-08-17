@@ -365,12 +365,21 @@ void drawTime() {
 
   gfx.setFont(ArialRoundedMTBold_36);
 
-  if (IS_STYLE_12HR) {
-    int hour = (timeinfo->tm_hour + 11) % 12 + 1; // take care of noon and midnight
-    sprintf(time_str, "%2d:%02d:%02d\n", hour, timeinfo->tm_min, timeinfo->tm_sec);
-  } else {
-    sprintf(time_str, "%02d:%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-  }
+  if (IS_STYLE_12HR) {                                                              //12:00
+     int hour = (timeinfo->tm_hour + 11) % 12 + 1; // take care of noon and midnight
+        if (IS_STYLE_HHMM) {
+            sprintf(time_str, "%2d:%02d\n", hour, timeinfo->tm_min);                //hh:mm
+        } else {
+            sprintf(time_str, "%2d:%02d:%02d\n", hour, timeinfo->tm_min, timeinfo->tm_sec); //hh:mm:ss
+        }
+  } else {                                                                            //24:00
+          if (IS_STYLE_HHMM) {
+              sprintf(time_str, "%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min); //hh:mm
+          } else {
+              sprintf(time_str, "%02d:%02d:%02d\n", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec); //hh:mm:ss
+          }
+        }
+
   gfx.drawString(120, 20, time_str);
 
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
