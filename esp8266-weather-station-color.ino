@@ -494,13 +494,9 @@ void drawCurrentWeatherDetail() {
   gfx.setColor(MINI_WHITE);
   gfx.drawString(120, 2, "Current Conditions");
 
-  String degreeSign = "°F";
-  if (IS_METRIC) {
-    degreeSign = "°C";
-  }
   // String weatherIcon;
   // String weatherText;
-  drawLabelValue(0, "Temperature:", currentWeather.temp + degreeSign);
+  drawLabelValue(0, "Temperature:", String(currentWeather.temp, 1) + (IS_METRIC ? "°C" : "°F"));
   drawLabelValue(1, "Wind Speed:", String(currentWeather.windSpeed, 1) + (IS_METRIC ? "m/s" : "mph") );
   drawLabelValue(2, "Wind Dir:", String(currentWeather.windDeg, 1) + "°");
   drawLabelValue(3, "Humidity:", String(currentWeather.humidity) + "%");
@@ -557,6 +553,10 @@ void drawForecastTable(uint8_t start) {
   if (IS_METRIC) {
     degreeSign = "°C";
   }
+  int firstColumnLabelX = 50;
+  int firstColumnValueX = 70;
+  int secondColumnLabelX = 130;
+  int secondColumnValueX = 170;
   for (uint8_t i = start; i < start + 4; i++) {
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
     y = 45 + (i - start) * 75;
@@ -570,42 +570,42 @@ void drawForecastTable(uint8_t start) {
     gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
 
 
-    gfx.drawPalettedBitmapFromPgm(0, 15 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
+    gfx.drawPalettedBitmapFromPgm(0, 5 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
     gfx.setColor(MINI_YELLOW);
     gfx.setFont(ArialRoundedMTBold_14);
-    gfx.drawString(10, y, forecasts[i].main);
+    gfx.drawString(0, y - 8, forecasts[i].main);
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
 
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(50, y, "T:");
+    gfx.drawString(firstColumnLabelX, y, "T:");
     gfx.setColor(MINI_WHITE);
-    gfx.drawString(70, y, String(forecasts[i].temp, 0) + degreeSign);
+    gfx.drawString(firstColumnValueX, y, String(forecasts[i].temp, 0) + degreeSign);
 
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(50, y + 15, "H:");
+    gfx.drawString(firstColumnLabelX, y + 15, "H:");
     gfx.setColor(MINI_WHITE);
-    gfx.drawString(70, y + 15, String(forecasts[i].humidity) + "%");
+    gfx.drawString(firstColumnValueX, y + 15, String(forecasts[i].humidity) + "%");
 
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(50, y + 30, "P: ");
+    gfx.drawString(firstColumnLabelX, y + 30, "P: ");
     gfx.setColor(MINI_WHITE);
-    gfx.drawString(70, y + 30, String(forecasts[i].rain, 2) + (IS_METRIC ? "mm" : "in"));
+    gfx.drawString(firstColumnValueX, y + 30, String(forecasts[i].rain, 2) + (IS_METRIC ? "mm" : "in"));
 
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(130, y, "Pr:");
+    gfx.drawString(secondColumnLabelX, y, "Pr:");
     gfx.setColor(MINI_WHITE);
-    gfx.drawString(170, y, String(forecasts[i].pressure, 0) + "hPa");
+    gfx.drawString(secondColumnValueX, y, String(forecasts[i].pressure, 0) + "hPa");
 
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(130, y + 15, "WSp:");
+    gfx.drawString(secondColumnLabelX, y + 15, "WSp:");
     gfx.setColor(MINI_WHITE);
-    gfx.drawString(170, y + 15, String(forecasts[i].windSpeed, 0) + (IS_METRIC ? "m/s" : "mph") );
+    gfx.drawString(secondColumnValueX, y + 15, String(forecasts[i].windSpeed, 0) + (IS_METRIC ? "m/s" : "mph") );
 
     gfx.setColor(MINI_BLUE);
-    gfx.drawString(130, y + 30, "WDi: ");
+    gfx.drawString(secondColumnLabelX, y + 30, "WDi: ");
     gfx.setColor(MINI_WHITE);
-    gfx.drawString(170, y + 30, String(forecasts[i].windDeg, 0) + "°");
+    gfx.drawString(secondColumnValueX, y + 30, String(forecasts[i].windDeg, 0) + "°");
   }
 }
 
