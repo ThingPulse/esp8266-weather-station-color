@@ -1,3 +1,5 @@
+#pragma once
+
 const char ThingPulseLogo[] PROGMEM = {
   0x01, // Version: 1
   0x02, // BitDepth: 2

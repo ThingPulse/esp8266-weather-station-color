@@ -1,3 +1,5 @@
+#pragma once
+
 /**The MIT License (MIT)
  
  Copyright (c) 2018 by ThingPulse Ltd., https://thingpulse.com

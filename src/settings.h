@@ -1,3 +1,5 @@
+#pragma once
+
 /**The MIT License (MIT)
  
  Copyright (c) 2018 by ThingPulse Ltd., https://thingpulse.com
@@ -24,14 +26,11 @@
 #include <Arduino.h>
 #include "TZinfo.h"
 
-// Setup
-String WIFI_SSID = "yourssid";
-String WIFI_PASS = "yourpassw0rd";
-#define WIFI_HOSTNAME "ThingPulse-weather-station-color"
+String WIFI_SSID = "wifi-12-private";
+String WIFI_PASS = "9263777101";
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
-
 
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
@@ -42,8 +41,10 @@ result set and select the entry closest to the actual location you want to displ
 data for. It'll be a URL like https://openweathermap.org/city/2657896. The number
 at the end is what you assign to the constant below.
  */
+
 String OPEN_WEATHER_MAP_LOCATION_ID = "2657896";
 String DISPLAYED_LOCATION_NAME = "Zurich";
+
 /*
 Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
 English -> en, Persian (Farsi) -> fa, Finnish -> fi, French -> fr, Galician -> gl,
@@ -81,16 +82,8 @@ bool IS_STYLE_HHMM = false; // true => HH:MM
 // August 1st, 2018
 #define NTP_MIN_VALID_EPOCH 1533081600
 
-// Pins for the ILI9341
-#define TFT_DC D2
-#define TFT_CS D1
-#define TFT_LED D8
+#define TFT_CS            5
+#define TFT_RST          15
+#define TFT_DC            4
 
-#define HAVE_TOUCHPAD
-#define TOUCH_CS D3
-#define TOUCH_IRQ  D4
-
-
-/***************************
- * End Settings
- **************************/
+#define SERIAL_BAUD  115200
