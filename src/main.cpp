@@ -27,12 +27,7 @@
 #include "time.h"
 #include <SPI.h>
 #include <ESP8266WiFi.h>
-
-// #include <Adafruit_GFX.h>    // Core graphics library
-// #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
-// Adafruit_ST7789 __tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 #include "SunMoonCalc.h"
-
 #include <JsonListener.h>
 #include <OpenWeatherMapCurrent.h>
 #include <OpenWeatherMapForecast.h>
@@ -180,6 +175,7 @@ void setup()
 
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
+  gfx.setRotation(0);
   gfx.commit();
 
   connectWifi();
