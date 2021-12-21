@@ -53,8 +53,6 @@ uint16_t palette[] = {ILI9341_BLACK,  // 0
                       ILI9341_YELLOW, // 2
                       0x7E3C};        //3
 
-int SCREEN_WIDTH = 240;
-int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
@@ -166,16 +164,17 @@ void setup()
 
   loadPropertiesFromSpiffs();
 
+#ifdef TFT_LED
   // The LED pin needs to set HIGH
   // Use this pin to save energy
   // Turn on the background LED
-  // Serial.println(TFT_LED);
-  // pinMode(TFT_LED, OUTPUT);
-  // digitalWrite(TFT_LED, HIGH); // HIGH to Turn on;
+  pinMode(TFT_LED, OUTPUT);
+  digitalWrite(TFT_LED, HIGH); // HIGH to Turn on;
+#endif
 
   gfx.init();
   gfx.fillBuffer(MINI_BLACK);
-  gfx.setRotation(0);
+  gfx.setRotation(TFT_ROTATION);
   gfx.commit();
 
   connectWifi();
@@ -192,7 +191,7 @@ void setup()
     SPIFFS.format();
   }
   drawProgress(100, "Formatting done");
-  
+
   // boolean isCalibrationAvailable = touchController.loadCalibration();
   // if (!isCalibrationAvailable)
   // {

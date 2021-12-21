@@ -81,9 +81,3 @@ bool IS_STYLE_HHMM = false; // true => HH:MM
 
 // August 1st, 2018
 #define NTP_MIN_VALID_EPOCH 1533081600
-
-#define TFT_CS            5
-#define TFT_RST          15
-#define TFT_DC            4
-
-#define SERIAL_BAUD  115200
