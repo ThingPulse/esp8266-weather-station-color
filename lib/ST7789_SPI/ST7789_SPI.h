@@ -29,21 +29,17 @@ Many thanks go to various contributors such as Adafruit, Waveshare.
 #define _MINIGRAFX_ST7789H_
 
 #if ARDUINO >= 100
- #include "Arduino.h"
- #include "Print.h"
+#include "Arduino.h"
+#include "Print.h"
 #else
- #include "WProgram.h"
+#include "WProgram.h"
 #endif
 #include "DisplayDriver.h"
-#if defined (__AVR__)
-  #include <avr/pgmspace.h>
+#if defined(__AVR__)
+#include <avr/pgmspace.h>
 #elif defined(ESP8266)
-  #include <pgmspace.h>
+#include <pgmspace.h>
 #endif
-
-
-#define ST7789_TFTWIDTH  240
-#define ST7789_TFTHEIGHT 320
 
 #define ST_CMD_DELAY 0x80 // special signifier for command lists
 
@@ -95,33 +91,45 @@ Many thanks go to various contributors such as Adafruit, Waveshare.
 #define ST77XX_ORANGE 0xFC00
 
 // Color definitions
-#define ST7789_BLACK       0x0000      /*   0,   0,   0 */
-#define ST7789_NAVY        0x000F      /*   0,   0, 128 */
-#define ST7789_DARKGREEN   0x03E0      /*   0, 128,   0 */
-#define ST7789_DARKCYAN    0x03EF      /*   0, 128, 128 */
-#define ST7789_MAROON      0x7800      /* 128,   0,   0 */
-#define ST7789_PURPLE      0x780F      /* 128,   0, 128 */
-#define ST7789_OLIVE       0x7BE0      /* 128, 128,   0 */
-#define ST7789_LIGHTGREY   0xC618      /* 192, 192, 192 */
-#define ST7789_DARKGREY    0x7BEF      /* 128, 128, 128 */
-#define ST7789_BLUE        0x001F      /*   0,   0, 255 */
-#define ST7789_GREEN       0x07E0      /*   0, 255,   0 */
-#define ST7789_CYAN        0x07FF      /*   0, 255, 255 */
-#define ST7789_RED         0xF800      /* 255,   0,   0 */
-#define ST7789_MAGENTA     0xF81F      /* 255,   0, 255 */
-#define ST7789_YELLOW      0xFFE0      /* 255, 255,   0 */
-#define ST7789_WHITE       0xFFFF      /* 255, 255, 255 */
-#define ST7789_ORANGE      0xFD20      /* 255, 165,   0 */
-#define ST7789_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
-#define ST7789_PINK        0xF81F
+#define ST7789_BLACK 0x0000       /*   0,   0,   0 */
+#define ST7789_NAVY 0x000F        /*   0,   0, 128 */
+#define ST7789_DARKGREEN 0x03E0   /*   0, 128,   0 */
+#define ST7789_DARKCYAN 0x03EF    /*   0, 128, 128 */
+#define ST7789_MAROON 0x7800      /* 128,   0,   0 */
+#define ST7789_PURPLE 0x780F      /* 128,   0, 128 */
+#define ST7789_OLIVE 0x7BE0       /* 128, 128,   0 */
+#define ST7789_LIGHTGREY 0xC618   /* 192, 192, 192 */
+#define ST7789_DARKGREY 0x7BEF    /* 128, 128, 128 */
+#define ST7789_BLUE 0x001F        /*   0,   0, 255 */
+#define ST7789_GREEN 0x07E0       /*   0, 255,   0 */
+#define ST7789_CYAN 0x07FF        /*   0, 255, 255 */
+#define ST7789_RED 0xF800         /* 255,   0,   0 */
+#define ST7789_MAGENTA 0xF81F     /* 255,   0, 255 */
+#define ST7789_YELLOW 0xFFE0      /* 255, 255,   0 */
+#define ST7789_WHITE 0xFFFF       /* 255, 255, 255 */
+#define ST7789_ORANGE 0xFD20      /* 255, 165,   0 */
+#define ST7789_GREENYELLOW 0xAFE5 /* 173, 255,  47 */
+#define ST7789_PINK 0xF81F
 
+#if (TFT_CS == -1) && (ST7789_TFTWIDTH == 240) && (ST7789_TFTHEIGHT == 240)
+// this specific CS-less dislpay works only in SPI MODE3
+#define SPI_MODE SPI_MODE3
+#else
+#define SPI_MODE SPI_MODE0
+#endif
 
-class ST7789_SPI : public DisplayDriver {
+#ifdef TFT_INVERSION
+#define ST77XX_INVSET ST77XX_INVOFF 
+#else
+#define ST77XX_INVSET ST77XX_INVON
+#endif
 
- public:
+class ST7789_SPI : public DisplayDriver
+{
 
+public:
   ST7789_SPI(int8_t _CS, int8_t _DC, int8_t _MOSI, int8_t _SCLK,
-       int8_t _RST, int8_t _MISO);
+             int8_t _RST, int8_t _MISO);
   ST7789_SPI(int8_t _CS, int8_t _DC, int8_t _RST = -1);
 
   void init(void);
@@ -137,13 +145,12 @@ class ST7789_SPI : public DisplayDriver {
   void writecommand(uint8_t c);
   void writedata(uint8_t d);
 
- private:
+private:
   void displayInit(const uint8_t *addr);
   void sendCommand(uint8_t commandByte, const uint8_t *dataBytes, uint8_t numDataBytes);
 
-  boolean  hwSPI;
-  int32_t  _cs, _dc, _rst, _mosi, _miso, _sclk;
-
+  boolean hwSPI;
+  int32_t _cs, _dc, _rst, _mosi, _miso, _sclk;
 };
 
 #endif

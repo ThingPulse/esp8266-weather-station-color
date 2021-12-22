@@ -26,24 +26,18 @@
 #include <Arduino.h>
 #include "TZinfo.h"
 
-String WIFI_SSID = "wifi-12-private";
-String WIFI_PASS = "9263777101";
+String WIFI_SSID = CONFIG_WIFI_SSID;
+String WIFI_PASS = CONFIG_WIFI_PASS;
+
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
 
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
-String OPEN_WEATHER_MAP_API_KEY = "******";
-/*
-Go to https://openweathermap.org/find?q= and search for a location. Go through the
-result set and select the entry closest to the actual location you want to display 
-data for. It'll be a URL like https://openweathermap.org/city/2657896. The number
-at the end is what you assign to the constant below.
- */
-
-String OPEN_WEATHER_MAP_LOCATION_ID = "3081368";
-String DISPLAYED_LOCATION_NAME = "Wroclaw";
+String OPEN_WEATHER_MAP_API_KEY = CONFIG_OPEN_WEATHER_MAP_API_KEY;
+String OPEN_WEATHER_MAP_LOCATION_ID = CONFIG_OPEN_WEATHER_MAP_LOCATION_ID;
+String DISPLAYED_LOCATION_NAME = CONFIG_DISPLAYED_LOCATION_NAME;
 
 /*
 Arabic -> ar, Bulgarian -> bg, Catalan -> ca, Czech -> cz, German -> de, Greek -> el,
@@ -54,7 +48,8 @@ Portuguese -> pt, Romanian -> ro, Russian -> ru, Swedish -> se, Slovak -> sk,
 Slovenian -> sl, Spanish -> es, Turkish -> tr, Ukrainian -> ua, Vietnamese -> vi,
 Chinese Simplified -> zh_cn, Chinese Traditional -> zh_tw.
 */
-const String OPEN_WEATHER_MAP_LANGUAGE = "pl";
+
+const String OPEN_WEATHER_MAP_LANGUAGE = CONFIG_OPEN_WEATHER_MAP_LANGUAGE;
 
 // Adjust according to your language
 const String WDAY_NAMES[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
@@ -64,7 +59,11 @@ const String MOON_PHASES[] = {"New Moon", "Waxing Crescent", "First Quarter", "W
                               "Full Moon", "Waning Gibbous", "Third quarter", "Waning Crescent"};
 
 // pick one from TZinfo.h
-String TIMEZONE = getTzInfo("Europe/Warsaw");
+String TIMEZONE = getTzInfo(TZ_TIMEZONE);
+#ifdef ESP32
+#define GMT_OFFSET_SEC 1 * 3600 // GMT+1
+#define DAYLIGHT_OFFSET_SEC 0
+#endif
 
 // values in metric or imperial system?
 bool IS_METRIC = true;
@@ -76,8 +75,8 @@ bool IS_STYLE_12HR = false;
 bool IS_STYLE_HHMM = false; // true => HH:MM
 
 // change for different NTP (time servers)
-#define NTP_SERVERS "pool.ntp.org"
-// #define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
+// #define NTP_SERVERS "pool.ntp.org"
+#define NTP_SERVERS "us.pool.ntp.org", "time.nist.gov", "pool.ntp.org"
 
 // August 1st, 2018
 #define NTP_MIN_VALID_EPOCH 1533081600

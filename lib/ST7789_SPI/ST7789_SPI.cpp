@@ -50,10 +50,10 @@ static inline void spi_begin(void)
 {
 #if defined(ARDUINO_ARCH_ARC32)
   // max speed!
-  SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE));
 #else
   // max speed!
-  SPI.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE));
 #endif
 }
 static inline void spi_end(void) __attribute__((always_inline));
@@ -112,7 +112,7 @@ static const uint8_t PROGMEM
         0, //     YSTART = 0
         320 >> 8,
         320 & 0xFF,                 //     YEND = 320
-        ST77XX_INVON, ST_CMD_DELAY, //  7: hack
+        ST77XX_INVSET, ST_CMD_DELAY, //  7: hack
         10,
         ST77XX_NORON, ST_CMD_DELAY,  //  8: Normal display on, no args, w/delay
         10,                          //     10 ms delay
@@ -292,7 +292,7 @@ void ST7789_SPI::init(void)
 
 #ifndef SPI_HAS_TRANSACTION
     SPI.setBitOrder(MSBFIRST);
-    SPI.setDataMode(SPI_MODE0);
+    SPI.setDataMode(SPI_MODE);
 #if defined(_AVR__)
     SPI.setClockDivider(SPI_CLOCK_DIV2); // 8 MHz (full! speed!)
     mySPCR = SPCR;

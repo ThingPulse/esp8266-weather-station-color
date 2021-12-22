@@ -1,5 +1,26 @@
-# ThingPulse ESP8266 Weather Station Color
+# Fork disclaimer
 
+This is a fork of a great project made by [ThingPulse](https://github.com/ThingPulse/esp8266-weather-station-color) that loads and displays weather inormation.
+
+I changed the structure of the project to be run as Platformio project, because
+- I want to run is on both esp8266 and esp32
+- I want to run it with multiple screen options
+
+Also I've added support of ST7789 screens (tested with 240x240 and 240x320 ones)
+ 
+### Why fork
+
+I'm working on my own development boards for both listed MCUs and this project is a good demonstration of kind of projects they would happily support
+
+## Configuration
+
+Specify your wifi credentials and location details at the top of [platformio.ini](/platformio.ini) file. You will also need to get OpenWeatherMap key, [sign up here](https://docs.thingpulse.com/how-tos/openweathermap-key) to get it
+
+## Demo
+
+![esp32](/doc/demo/VID_20211222_144902.gif)
+
+# ThingPulse ESP8266 Weather Station Color
 
 [![ThingPulse logo](https://thingpulse.com/assets/ThingPulse-w300.svg)](https://thingpulse.com)
 

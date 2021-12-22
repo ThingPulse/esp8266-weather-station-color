@@ -26,7 +26,12 @@
 #include <Arduino.h>
 #include "time.h"
 #include <SPI.h>
+#ifdef ESP32
+#include <WiFi.h>
+#endif
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
+#endif
 #include "SunMoonCalc.h"
 #include <JsonListener.h>
 #include <OpenWeatherMapCurrent.h>
@@ -39,6 +44,8 @@
 #include "ArialRounded.h"
 #include "moonphases.h"
 #include "weathericons.h"
+
+#include "main.h"
 
 #define MINI_BLACK 0
 #define MINI_WHITE 1
@@ -56,7 +63,9 @@ uint16_t palette[] = {ILI9341_BLACK,  // 0
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
+#ifdef ESP8266
 ADC_MODE(ADC_VCC);
+#endif
 
 ST7789_SPI tft = ST7789_SPI(TFT_CS, TFT_DC, TFT_RST);
 MiniGrafx gfx = MiniGrafx(&tft, BITS_PER_PIXEL, palette);
@@ -73,27 +82,6 @@ OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
 
 Astronomy::MoonData moonData;
 //SunMoonCalc::Moon moonData;
-
-void updateData();
-void drawProgress(uint8_t percentage, String text);
-void drawTime();
-void drawWifiQuality();
-void drawCurrentWeather();
-void drawForecast();
-void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
-void drawAstronomy();
-void drawCurrentWeatherDetail();
-void drawLabelValue(uint8_t line, String label, String value);
-void drawForecastTable(uint8_t start);
-void drawAbout();
-void drawSeparator(uint16_t y);
-String getTime(time_t *timestamp);
-const char *getMeteoconIconFromProgmem(String iconText);
-const char *getMiniMeteoconIconFromProgmem(String iconText);
-void drawForecast1(MiniGrafx *display, CarouselState *state, int16_t x, int16_t y);
-void drawForecast2(MiniGrafx *display, CarouselState *state, int16_t x, int16_t y);
-void drawForecast3(MiniGrafx *display, CarouselState *state, int16_t x, int16_t y);
-void loadPropertiesFromSpiffs();
 
 FrameCallback frames[] = {drawForecast1, drawForecast2, drawForecast3};
 int frameCount = 3;
@@ -141,7 +129,12 @@ void initTime()
   gfx.setFont(ArialRoundedMTBold_14);
 
   Serial.printf("Configuring time for timezone %s\n", TIMEZONE.c_str());
+  #ifdef ESP8266
   configTime(TIMEZONE.c_str(), NTP_SERVERS);
+  #endif
+  #ifdef ESP32
+  configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVERS);
+  #endif
   int i = 1;
   while ((now = time(nullptr)) < NTP_MIN_VALID_EPOCH)
   {
@@ -161,6 +154,8 @@ void initTime()
 void setup()
 {
   Serial.begin(SERIAL_BAUD);
+  delay(500);
+  Serial.println("Starting...");
 
   loadPropertiesFromSpiffs();
 
@@ -296,7 +291,12 @@ void loop()
     delay(1000);
     drawProgress(100, "Going to Sleep!");
     // go to deepsleep for xx minutes or 0 = permanently
+    #ifdef ESP8266
     ESP.deepSleep(0, WAKE_RF_DEFAULT); // 0 delay = permanently to sleep
+    #endif
+    #ifdef ESP32
+    // not yet implemented for esp32
+    #endif
   }
 }
 
@@ -664,10 +664,16 @@ void drawAbout()
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   drawLabelValue(7, "Heap Mem:", String(ESP.getFreeHeap() / 1024) + "kb");
+  #ifdef ESP8266
   drawLabelValue(8, "Flash Mem:", String(ESP.getFlashChipRealSize() / 1024 / 1024) + "MB");
+  #endif
   drawLabelValue(9, "WiFi Strength:", String(WiFi.RSSI()) + "dB");
+  #ifdef ESP8266
   drawLabelValue(10, "Chip ID:", String(ESP.getChipId()));
+  #endif
+  #ifdef ESP8266
   drawLabelValue(11, "VCC: ", String(ESP.getVcc() / 1024.0) + "V");
+  #endif
   drawLabelValue(12, "CPU Freq.: ", String(ESP.getCpuFreqMHz()) + "MHz");
   char time_str[15];
   const uint32_t millis_in_day = 1000 * 60 * 60 * 24;
@@ -683,7 +689,9 @@ void drawAbout()
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(15, 280, "Last Reset: ");
   gfx.setColor(MINI_WHITE);
+  #ifdef ESP8266
   gfx.drawStringMaxWidth(15, 295, 240 - 2 * 15, ESP.getResetInfo());
+  #endif
 }
 
 // void calibrationCallback(int16_t x, int16_t y)
