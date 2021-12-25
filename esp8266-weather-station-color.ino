@@ -46,7 +46,6 @@
 #include <JsonListener.h>
 #include <OpenWeatherMapCurrent.h>
 #include <OpenWeatherMapForecast.h>
-#include <Astronomy.h>
 #include <MiniGrafx.h>
 #include <Carousel.h>
 #include <ILI9341_SPI.h>
@@ -93,9 +92,7 @@ CalibrationCallback calibration = &calibrationCallback;
 
 OpenWeatherMapCurrentData currentWeather;
 OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
-
-Astronomy::MoonData moonData;
-//SunMoonCalc::Moon moonData;
+SunMoonCalc::Moon moonData;
 
 void updateData();
 void drawProgress(uint8_t percentage, String text);
@@ -360,18 +357,12 @@ void updateData() {
   delete forecastClient;
   forecastClient = nullptr;
 
-  drawProgress(80, "Updating astronomy...");
-  Astronomy *astronomy = new Astronomy();
-  moonData = astronomy->calculateMoonData(now);
-  moonData.phase = astronomy->calculateMoonPhase(now);
-  delete astronomy;
-  astronomy = nullptr;
-  //https://github.com/ThingPulse/esp8266-weather-station/issues/144 prevents using this
-  //  // 'now' has to be UTC, lat/lng in degrees not raadians
-  //  SunMoonCalc *smCalc = new SunMoonCalc(now - dstOffset, currentWeather.lat, currentWeather.lon);
-  //  moonData = smCalc->calculateSunAndMoonData().moon;
-  //  delete smCalc;
-  //  smCalc = nullptr;
+  drawProgress(80, "Updating astronomy data...");
+  // 'now' has to be UTC, lat/lng in degrees not radians
+  SunMoonCalc *smCalc = new SunMoonCalc(now, currentWeather.lat, currentWeather.lon);
+  moonData = smCalc->calculateSunAndMoonData().moon;
+  delete smCalc;
+  smCalc = nullptr;
   Serial.printf("Free mem: %d\n",  ESP.getFreeHeap());
 
   delay(1000);
@@ -511,7 +502,7 @@ void drawAstronomy() {
   gfx.setFont(ArialRoundedMTBold_14);
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   gfx.setColor(MINI_YELLOW);
-  gfx.drawString(120, 250, MOON_PHASES[moonData.phase]);
+  gfx.drawString(120, 250, MOON_PHASES[moonData.phase.index]);
 
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.setColor(MINI_YELLOW);
@@ -528,12 +519,10 @@ void drawAstronomy() {
   gfx.setColor(MINI_YELLOW);
   gfx.drawString(235, 250, SUN_MOON_TEXT[3]);
   gfx.setColor(MINI_WHITE);
-  float lunarMonth = 29.53;
-  // approximate moon age
-  gfx.drawString(235, 276, String(moonData.phase <= 4 ? lunarMonth * moonData.illumination / 2.0 : lunarMonth - moonData.illumination * lunarMonth / 2.0, 1) + "d");
-  gfx.drawString(235, 291, String(moonData.illumination * 100, 0) + "%");
   gfx.drawString(190, 276, SUN_MOON_TEXT[4] + ":");
+  gfx.drawString(235, 276, String(moonData.age, 1) + "d");
   gfx.drawString(190, 291, SUN_MOON_TEXT[5] + ":");
+  gfx.drawString(235, 291, String(moonData.illumination * 100, 0) + "%");
 }
 
 void drawCurrentWeatherDetail() {
