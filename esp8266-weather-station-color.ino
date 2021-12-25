@@ -128,6 +128,8 @@ long lastDownloadUpdate = millis();
 uint16_t screen = 0;
 long timerPress;
 bool canBtnPress;
+bool sleep_mode();
+char* make12_24(int hour);
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
@@ -237,60 +239,101 @@ TS_Point points[10];
 uint8_t currentTouchPoint = 0;
 
 void loop() {
+  static bool asleep = false; //  asleep used to stop screen change after touch for wake-up
   gfx.fillBuffer(MINI_BLACK);
   if (touchController.isTouched(0)) {
     TS_Point p = touchController.getPoint();
+    timerPress = millis();
 
     Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
-
-    if (p.y < 80) {
-      IS_STYLE_12HR = !IS_STYLE_12HR;
-    } else {
-      screen = (screen + 1) % screenCount;
+    if (!asleep) { // no need to change screens;
+      if (p.y < 80) {
+        IS_STYLE_12HR = !IS_STYLE_12HR;
+      } else {
+        screen = (screen + 1) % screenCount;
+      }
     }
-  }
+  } // isTouched()
 
-  if (screen == 0) {
-    drawTime();
-    drawWifiQuality();
-    int remainingTimeBudget = carousel.update();
-    if (remainingTimeBudget > 0) {
-      // You can do some work here
-      // Don't do stuff if you are below your
-      // time budget.
-      delay(remainingTimeBudget);
+  if (!(asleep = sleep_mode())) {
+    if (screen == 0) {
+      drawTime();
+
+      drawWifiQuality();
+      int remainingTimeBudget = carousel.update();
+      if (remainingTimeBudget > 0) {
+        // You can do some work here
+        // Don't do stuff if you are below your
+        // time budget.
+        delay(remainingTimeBudget);
+      }
+      drawCurrentWeather();
+      drawAstronomy();
+    } else if (screen == 1) {
+      drawCurrentWeatherDetail();
+    } else if (screen == 2) {
+      drawForecastTable(0);
+    } else if (screen == 3) {
+      drawForecastTable(4);
+    } else if (screen == 4) {
+      drawAbout();
     }
-    drawCurrentWeather();
-    drawAstronomy();
-  } else if (screen == 1) {
-    drawCurrentWeatherDetail();
-  } else if (screen == 2) {
-    drawForecastTable(0);
-  } else if (screen == 3) {
-    drawForecastTable(4);
-  } else if (screen == 4) {
-    drawAbout();
-  }
-  gfx.commit();
+    gfx.commit();
 
-  // Check if we should update weather information
-  if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
-    updateData();
-    lastDownloadUpdate = millis();
-  }
-
-  if (SLEEP_INTERVAL_SECS && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after 2 minutes go to sleep
-    drawProgress(25, "Going to Sleep!");
-    delay(1000);
-    drawProgress(50, "Going to Sleep!");
-    delay(1000);
-    drawProgress(75, "Going to Sleep!");
-    delay(1000);
-    drawProgress(100, "Going to Sleep!");
-    // go to deepsleep for xx minutes or 0 = permanently
-    ESP.deepSleep(0,  WAKE_RF_DEFAULT);                       // 0 delay = permanently to sleep
-  }
+    // Check if we should update weather information
+    if (millis() - lastDownloadUpdate > 1000 * UPDATE_INTERVAL_SECS) {
+      updateData();
+      lastDownloadUpdate = millis();
+    }
+  } //!asleep
 }
+
+/*
+
+  	Check and activate when it is time to go to sleep
+
+  	parameters:	(defined in settings)
+  	 	SLEEP_INTERVAL_SECS 	time between screen touches in seconds before activating sleep mode
+  	 	HARD_SLEEP			 	true  -> deep sleep requiring interrupt or reset to wake
+  	 							false -> soft sleep turning off backlight wake with screen press
+
+  	returns: true when sleep mode is active
+*/
+bool sleep_mode() {
+  static bool sleeping = false; // no need to waste time painting going to sleep screens
+  if (SLEEP_INTERVAL_SECS
+      && millis() - timerPress >= SLEEP_INTERVAL_SECS * 1000) { // after 2 minutes go to sleep
+    if (true == sleeping)
+      return sleeping;  // all-ready asleep
+
+    int s = 0;
+    do {
+      drawProgress(s, "Going to Sleep!");
+      delay(10);
+      yield();
+    } while (s++ < 100 && !touchController.isTouched(0));
+    if (s < 100) {                         // early exit abort
+      timerPress = millis();               // reset sleep timeout
+      touchController.getPoint();          // throw away
+      if (touchController.isTouched(0))    // resets lastTouched
+        touchController.getPoint();        // throw away
+    } else {
+      sleeping = true;
+      if (true == HARD_SLEEP) {
+        // go to deepsleep for xx minutes or 0 = permanently
+        ESP.deepSleep(0, WAKE_RF_DEFAULT); // 0 delay = permanently to sleep
+      } else {
+        digitalWrite(TFT_LED, LOW);        // Back light OFF
+      }
+    }
+  } else {                                 // Not time to sleep
+    if (sleeping) {                        // Wake up
+      digitalWrite(TFT_LED, HIGH);         // Back light ON
+      sleeping = false;
+    }
+  }
+  return sleeping;  // used to prevent screen changes on wake-up screen press
+}	// sleep_mode()
 
 // Update the internet based information and update screen
 void updateData() {
@@ -441,7 +484,12 @@ void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex) {
   gfx.setTextAlignment(TEXT_ALIGN_CENTER);
   time_t time = forecasts[dayIndex].observationTime;
   struct tm * timeinfo = localtime (&time);
-  gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+    //  Added 24hr / 12hr conversion  // 
+    if(IS_STYLE_12HR){
+    gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(make12_24(timeinfo->tm_hour)));
+  } else {
+    gfx.drawString(x + 25, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+  }
 
   gfx.setColor(MINI_WHITE);
   gfx.drawString(x + 25, y, String(forecasts[dayIndex].temp, 1) + (IS_METRIC ? "°C" : "°F"));
@@ -567,7 +615,12 @@ void drawForecastTable(uint8_t start) {
     gfx.setTextAlignment(TEXT_ALIGN_CENTER);
     time_t time = forecasts[i].observationTime;
     struct tm * timeinfo = localtime (&time);
-    gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+    //  Added 24hr / 12hr conversion  // 
+        if(IS_STYLE_12HR){
+      gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(make12_24(timeinfo->tm_hour)));
+    } else {
+      gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
+    }
 
 
     gfx.drawPalettedBitmapFromPgm(0, 5 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
@@ -648,12 +701,43 @@ void calibrationCallback(int16_t x, int16_t y) {
   gfx.fillCircle(x, y, 10);
 }
 
+//  Added 24hr / 12hr conversion  // 
 String getTime(time_t *timestamp) {
   struct tm *timeInfo = localtime(timestamp);
 
-  char buf[6];
-  sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
+  //char buf[6];
+  char buf[9];  // "12:34 pm\0"
+  char ampm[3]; ampm[0]='\0'; //Ready for 24hr clock
+  uint8_t hour = timeInfo->tm_hour;
+
+  if(IS_STYLE_12HR){
+    if(hour > 12){
+      hour = hour - 12;
+      sprintf(ampm,"pm");
+    } else {
+      sprintf(ampm,"am");
+    }
+    sprintf(buf, "%2d:%02d %s", hour, timeInfo->tm_min, ampm);
+   } else {
+    sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
+   }
   return String(buf);
+}
+
+/*
+ *  Convert hour from 24 hr time to 12 hr time
+ *  @return cString with 2 digit hour + am or pm 
+ *
+ */
+char* make12_24(int hour){
+  static char hr[6];
+  if(hour > 12){
+    sprintf(hr, "%2d pm", (hour -12) );
+    //sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
+  } else {
+    sprintf(hr, "%2d am", hour);
+  }
+  return hr;
 }
 
 void loadPropertiesFromSpiffs() {

@@ -20,7 +20,8 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
  */
-
+#ifndef SETTINGS_H
+#define SETTINGS_H
 #include <Arduino.h>
 #include "TZinfo.h"
 
@@ -31,7 +32,7 @@ String WIFI_PASS = "yourpassw0rd";
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
-
+const boolean HARD_SLEEP = false;         // true go into deepSleep false = turn Back light off
 
 // OpenWeatherMap Settings
 // Sign up here to get an API key: https://docs.thingpulse.com/how-tos/openweathermap-key/
@@ -94,3 +95,4 @@ bool IS_STYLE_HHMM = false; // true => HH:MM
 /***************************
  * End Settings
  **************************/
+#endif
