@@ -201,28 +201,30 @@ void setup() {
   }
   drawProgress(100, "Formatting done");
 
-    /* Allow user to force a screen re-calibration  */
+  /* Allow user to force a screen re-calibration  */
   gfx.fillBuffer(MINI_BLACK);
-  gfx.drawString(120, 160, F("Press and hold\n will force touch screen\n calibration"));
+  gfx.drawString(120, 160, F("Press and hold\nto initiate touch screen\ncalibration"));
   gfx.commit();
-  delay(2000); yield();
+  delay(3000);
+  yield();
   boolean isCalibrationAvailable = touchController.loadCalibration();
-  if(ts.touched()){
-   isCalibrationAvailable = false;
-   gfx.fillBuffer(MINI_YELLOW);
-   gfx.drawString(120, 160, F("OK press detected Release"));
-   gfx.commit();
+  if(ts.touched()) {
+    isCalibrationAvailable = false;
+    gfx.fillBuffer(MINI_YELLOW);
+    gfx.drawString(120, 160, F("Calibration initiated\nnow release screen"));
+    gfx.commit();
 
-   // Wait for release otherwise touch becomes first calibration point
-   while(ts.touched()){ 
-    delay(10); yield();
-   }
+    // Wait for release otherwise touch becomes first calibration point
+    while(ts.touched()) { 
+      delay(10);
+      yield();
+    }
     delay(100); // debounce
     touchController.getPoint(); // throw away last point
   }
 
   if (!isCalibrationAvailable) {
-    Serial.println("Calibration not available");
+    Serial.println("Calibration data not available or force calibration initiated");
     touchController.startCalibration(&calibration);
     while (!touchController.isCalibrationFinished()) {
       gfx.fillBuffer(0);
