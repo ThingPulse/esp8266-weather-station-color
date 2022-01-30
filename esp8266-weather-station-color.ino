@@ -257,16 +257,34 @@ uint8_t currentTouchPoint = 0;
 
 void loop() {
   static bool asleep = false; //  asleep used to stop screen change after touch for wake-up
+  const static uint8_t top = gfx.getHeight() / 4;
+  const static uint8_t bottom = gfx.getHeight() - (gfx.getHeight() / 4);
+  const static uint8_t middle = gfx.getWidth() / 2;
+
   gfx.fillBuffer(MINI_BLACK);
-  if (touchController.isTouched(0)) {
+
+  if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     timerPress = millis();
-
+    
     Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
-    if (!asleep) { // no need to change screens;
-      if (p.y < 80) {
+    if (!asleep) { // no need to update or change screens;
+      if (p.y <= top)   Serial.print(" TOP ");
+      if (p.x > middle) Serial.print(" Left ");
+      if (p.x <= middle)  Serial.print(" Right ");
+      if (p.y >= bottom)  Serial.print(" Bottom ");
+      Serial.println();
+
+      if (p.y < top) {
         IS_STYLE_12HR = !IS_STYLE_12HR;
-      } else {
+      } else if (p.y > bottom) {    // Go to page 0
+        screen = 0;
+      } else if (p.x > middle) {    // Previous page
+        if (screen == 0) {        // Note type is Unsigned
+          screen = screenCount; // Last screen is max -1
+        }
+        screen--;
+      } else {            // Next page
         screen = (screen + 1) % screenCount;
       }
     }
