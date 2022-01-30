@@ -189,8 +189,6 @@ void setup() {
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
-  connectWifi();
-
   Serial.println("Initializing touch screen...");
   ts.begin();
 
@@ -202,7 +200,27 @@ void setup() {
     SPIFFS.format();
   }
   drawProgress(100, "Formatting done");
+
+    /* Allow user to force a screen re-calibration  */
+  gfx.fillBuffer(MINI_BLACK);
+  gfx.drawString(120, 160, F("Press and hold\n will force touch screen\n calibration"));
+  gfx.commit();
+  delay(2000); yield();
   boolean isCalibrationAvailable = touchController.loadCalibration();
+  if(ts.touched()){
+   isCalibrationAvailable = false;
+   gfx.fillBuffer(MINI_YELLOW);
+   gfx.drawString(120, 160, F("OK press detected Release"));
+   gfx.commit();
+
+   // Wait for release otherwise touch becomes first calibration point
+   while(ts.touched()){ 
+    delay(10); yield();
+   }
+    delay(100); // debounce
+    touchController.getPoint(); // throw away last point
+  }
+
   if (!isCalibrationAvailable) {
     Serial.println("Calibration not available");
     touchController.startCalibration(&calibration);
@@ -217,6 +235,8 @@ void setup() {
     }
     touchController.saveCalibration();
   }
+
+  connectWifi();
 
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
@@ -238,15 +258,38 @@ uint8_t currentTouchPoint = 0;
 void loop() {
   static bool asleep = false; //  asleep used to stop screen change after touch for wake-up
   gfx.fillBuffer(MINI_BLACK);
-  if (touchController.isTouched(0)) {
+
+  /* Break up the screen into 4 sections a touch in section:
+   * - Top changes the time format
+   * - Left back one page
+   * - Right forward one page
+   * - Bottom jump to page 0
+   */
+  const static uint8_t top = gfx.getHeight() / 4;
+  const static uint8_t bottom = gfx.getHeight() - (gfx.getHeight() / 4);
+  const static uint8_t middle = gfx.getWidth() / 2;
+  if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     timerPress = millis();
-
+    
     Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
-    if (!asleep) { // no need to change screens;
-      if (p.y < 80) {
+    if (!asleep) { // no need to update or change screens;
+      if (p.y <= top)   Serial.print(" TOP ");
+      if (p.x > middle) Serial.print(" Left ");
+      if (p.x <= middle)  Serial.print(" Right ");
+      if (p.y >= bottom)  Serial.print(" Bottom ");
+      Serial.println();
+
+      if (p.y < top) {
         IS_STYLE_12HR = !IS_STYLE_12HR;
-      } else {
+      } else if (p.y > bottom) {  // Go to page 0
+        screen = 0;
+      } else if (p.x > middle) {  // Previous page
+        if (screen == 0) {        // Note type is Unsigned
+          screen = screenCount;   // Last screen is max -1
+        }
+        screen--;
+      } else {                   // Next page
         screen = (screen + 1) % screenCount;
       }
     }
