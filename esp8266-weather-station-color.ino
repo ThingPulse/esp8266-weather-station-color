@@ -189,6 +189,8 @@ void setup() {
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
+  connectWifi();
+
   Serial.println("Initializing touch screen...");
   ts.begin();
 
@@ -200,27 +202,7 @@ void setup() {
     SPIFFS.format();
   }
   drawProgress(100, "Formatting done");
-
-    /* Allow user to force a screen re-calibration  */
-  gfx.fillBuffer(MINI_BLACK);
-  gfx.drawString(120, 160, F("Press and hold\n will force touch screen\n calibration"));
-  gfx.commit();
-  delay(2000); yield();
   boolean isCalibrationAvailable = touchController.loadCalibration();
-  if(ts.touched()){
-   isCalibrationAvailable = false;
-   gfx.fillBuffer(MINI_YELLOW);
-   gfx.drawString(120, 160, F("OK press detected Release"));
-   gfx.commit();
-
-   // Wait for release otherwise touch becomes first calibration point
-   while(ts.touched()){ 
-    delay(10); yield();
-   }
-    delay(100); // debounce
-    touchController.getPoint(); // throw away last point
-  }
-
   if (!isCalibrationAvailable) {
     Serial.println("Calibration not available");
     touchController.startCalibration(&calibration);
@@ -235,8 +217,6 @@ void setup() {
     }
     touchController.saveCalibration();
   }
-
-  connectWifi();
 
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
