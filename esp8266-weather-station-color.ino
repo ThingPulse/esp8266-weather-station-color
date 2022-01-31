@@ -122,7 +122,10 @@ int frameCount = 3;
 int screenCount = 5;
 long lastDownloadUpdate = millis();
 
-uint16_t screen = 0;
+uint8_t screen = 0;
+uint16_t m_top, m_bottom, m_middle;    // divide screen into 4 quadrants "< top", "> bottom", " < middle "," > middle "
+uint8_t changeScreen(TS_Point p, uint8_t screen);
+
 long timerPress;
 bool canBtnPress;
 bool sleep_mode();
@@ -238,6 +241,10 @@ void setup() {
     touchController.saveCalibration();
   }
 
+  m_top = gfx.getHeight() / 4;
+  m_bottom = gfx.getHeight() - (gfx.getHeight() / 4);
+  m_middle = gfx.getWidth() / 2;
+
   connectWifi();
 
   carousel.setFrames(frames, frameCount);
@@ -258,7 +265,7 @@ TS_Point points[10];
 uint8_t currentTouchPoint = 0;
 
 void loop() {
-  static bool asleep = false; //  asleep used to stop screen change after touch for wake-up
+  static bool asleep = false;	//  asleep used to stop screen change after touch for wake-up
   gfx.fillBuffer(MINI_BLACK);
 
   /* Break up the screen into 4 sections a touch in section:
@@ -267,33 +274,11 @@ void loop() {
    * - Right forward one page
    * - Bottom jump to page 0
    */
-  const static uint8_t top = gfx.getHeight() / 4;
-  const static uint8_t bottom = gfx.getHeight() - (gfx.getHeight() / 4);
-  const static uint8_t middle = gfx.getWidth() / 2;
   if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     timerPress = millis();
-    
-    Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
-    if (!asleep) { // no need to update or change screens;
-      if (p.y <= top)   Serial.print(" TOP ");
-      if (p.x > middle) Serial.print(" Left ");
-      if (p.x <= middle)  Serial.print(" Right ");
-      if (p.y >= bottom)  Serial.print(" Bottom ");
-      Serial.println();
-
-      if (p.y < top) {
-        IS_STYLE_12HR = !IS_STYLE_12HR;
-      } else if (p.y > bottom) {  // Go to page 0
-        screen = 0;
-      } else if (p.x > middle) {  // Previous page
-        if (screen == 0) {        // Note type is Unsigned
-          screen = screenCount;   // Last screen is max -1
-        }
-        screen--;
-      } else {                   // Next page
-        screen = (screen + 1) % screenCount;
-      }
+    if (!asleep) { 				// no need to update or change screens;
+    	screen = changeScreen(p, screen);
     }
   } // isTouched()
 
@@ -824,4 +809,34 @@ void loadPropertiesFromSpiffs() {
   } else {
     Serial.println("SPIFFS mount failed.");
   }
+}
+
+/*
+ *            Change screen from touchpoint location
+ * 
+ */
+uint8_t changeScreen(TS_Point p, uint8_t screen){
+  uint8_t page = screen;
+
+//    Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
+//      // From the screen's point of view commented values for the 240 X 320 touch screen
+//      if (p.y <= m_top)   Serial.print(" TOP ");      // <= 80
+//      if (p.x > m_middle) Serial.print(" Left ");     // > 120
+//      if (p.x <= m_middle)  Serial.print(" Right ");  // <= 120
+//      if (p.y >= m_bottom)  Serial.print(" Bottom "); // >= 240
+//      Serial.println();
+
+    if (p.y < m_top) {
+      IS_STYLE_12HR = !IS_STYLE_12HR;
+    } else if (p.y > m_bottom) {  // Go to page 0
+      page = 0;
+    } else if (p.x > m_middle) {  // Previous page
+      if (page == 0) {        // Note type is Unsigned
+        page = screenCount;   // Last screen is max -1
+      }
+      page--;
+    } else {                   // Next page
+      page = (page + 1) % screenCount;
+    }
+  return page;
 }
