@@ -42,6 +42,6 @@ A touch in one of the 4 quadrants changes the display:
  - Middle Left  cycles one screen left.
  - Middle Right cycles one screen right.
  - Bottom 1/4 Jumps to page 0.
-![Root Page](./TouchScreen.png)
+![Root Page](/.github/TouchScreen.png)
 
 Note: After a restart press and hold on first screen will force a touch screen recalibration.
