@@ -34,3 +34,14 @@ ThingPulse runs a support forum for its customers that is better suited to answe
 ## Wiring
 
 The [wiring diagram](https://docs.thingpulse.com/specs/wifi-color-display-kit/#wiring) is only needed when you do _not_ buy the self-contained kit from ThingPulse but rather assemble the components yourself. The kit provides a custom PCB that solidly connects microcontroller and display.
+
+## Operation
+
+A touch in one of the 4 quadrants changes the display:
+ - Top 1/4 toggles the 12 or 24 hour time format.
+ - Middle Left  cycles one screen left.
+ - Middle Right cycles one screen right.
+ - Bottom 1/4 Jumps to page 0.
+![Root Page](./TouchScreen.png)
+
+Note: After a restart press and hold on first screen will force a touch screen recalibration.
