@@ -69,8 +69,6 @@ uint16_t palette[] = {ILI9341_BLACK, // 0
                       0x7E3C
                      }; //3
 
-int SCREEN_WIDTH = 240;
-int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
@@ -123,7 +121,8 @@ int screenCount = 5;
 long lastDownloadUpdate = millis();
 
 uint8_t screen = 0;
-uint16_t m_top, m_bottom, m_middle;    // divide screen into 4 quadrants "< top", "> bottom", " < middle "," > middle "
+// divide screen into 4 quadrants "< top", "> bottom", " < middle "," > middle "
+uint16_t dividerTop, dividerBottom, dividerMiddle;
 uint8_t changeScreen(TS_Point p, uint8_t screen);
 
 long timerPress;
@@ -241,9 +240,9 @@ void setup() {
     touchController.saveCalibration();
   }
 
-  m_top = gfx.getHeight() / 4;
-  m_bottom = gfx.getHeight() - (gfx.getHeight() / 4);
-  m_middle = gfx.getWidth() / 2;
+  dividerTop = 64;
+  dividerBottom = gfx.getHeight() - dividerTop;
+  dividerMiddle = gfx.getWidth() / 2;
 
   connectWifi();
 
@@ -816,17 +815,17 @@ uint8_t changeScreen(TS_Point p, uint8_t screen) {
 
   // Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
   // From the screen's point of view commented values for the 240 X 320 touch screen
-  // if (p.y < m_top)      Serial.print(" top ");    // <= 80
-  // if (p.y > m_bottom)   Serial.print(" bottom "); // >= 240
-  // if (p.x > m_middle)   Serial.print(" left ");   // > 120
-  // if (p.x <= m_middle)  Serial.print(" right ");  // <= 120
+  // if (p.y < dividerTop)      Serial.print(" top ");    // < 80
+  // if (p.y > dividerBottom)   Serial.print(" bottom "); // > 240
+  // if (p.x > dividerMiddle)   Serial.print(" left ");   // > 120
+  // if (p.x <= dividerMiddle)  Serial.print(" right ");  // <= 120
   // Serial.println();
 
-  if (p.y < m_top) {            // top -> change 12/24h style
+  if (p.y < dividerTop) {            // top -> change 12/24h style
     IS_STYLE_12HR = !IS_STYLE_12HR;
-  } else if (p.y > m_bottom) {  // bottom -> go to screen 0
+  } else if (p.y > dividerBottom) {  // bottom -> go to screen 0
     page = 0;
-  } else if (p.x > m_middle) {  // left -> previous page
+  } else if (p.x > dividerMiddle) {  // left -> previous page
     if (page == 0) {            // Note type is unsigned
       page = screenCount;       // Last screen is max -1
     }
