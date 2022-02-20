@@ -37,11 +37,4 @@ The [wiring diagram](https://docs.thingpulse.com/specs/wifi-color-display-kit/#w
 
 ## Operation
 
-A touch in one of the 4 quadrants changes the display:
- - Top 1/4 toggles the 12 or 24 hour time format.
- - Middle Left  cycles one screen left.
- - Middle Right cycles one screen right.
- - Bottom 1/4 Jumps to page 0.
-![Root Page](/.github/TouchScreen.png)
-
-Note: After a restart press and hold on first screen will force a touch screen recalibration.
+See ["Operation" in the official documentation](https://docs.thingpulse.com/guides/wifi-color-display-kit/#operation).
