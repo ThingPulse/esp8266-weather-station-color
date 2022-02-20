@@ -69,8 +69,6 @@ uint16_t palette[] = {ILI9341_BLACK, // 0
                       0x7E3C
                      }; //3
 
-int SCREEN_WIDTH = 240;
-int SCREEN_HEIGHT = 320;
 // Limited to 4 colors due to memory constraints
 int BITS_PER_PIXEL = 2; // 2^2 =  4 colors
 
@@ -122,7 +120,11 @@ int frameCount = 3;
 int screenCount = 5;
 long lastDownloadUpdate = millis();
 
-uint16_t screen = 0;
+uint8_t screen = 0;
+// divide screen into 4 quadrants "< top", "> bottom", " < middle "," > middle "
+uint16_t dividerTop, dividerBottom, dividerMiddle;
+uint8_t changeScreen(TS_Point p, uint8_t screen);
+
 long timerPress;
 bool canBtnPress;
 bool sleep_mode();
@@ -189,8 +191,6 @@ void setup() {
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
-  connectWifi();
-
   Serial.println("Initializing touch screen...");
   ts.begin();
 
@@ -202,9 +202,31 @@ void setup() {
     SPIFFS.format();
   }
   drawProgress(100, "Formatting done");
+
+  /* Allow user to force a screen re-calibration  */
+  gfx.fillBuffer(MINI_BLACK);
+  gfx.drawString(120, 160, F("Press and hold\nto initiate touch screen\ncalibration"));
+  gfx.commit();
+  delay(3000);
+  yield();
   boolean isCalibrationAvailable = touchController.loadCalibration();
+  if(ts.touched()) {
+    isCalibrationAvailable = false;
+    gfx.fillBuffer(MINI_YELLOW);
+    gfx.drawString(120, 160, F("Calibration initiated\nnow release screen"));
+    gfx.commit();
+
+    // Wait for release otherwise touch becomes first calibration point
+    while(ts.touched()) { 
+      delay(10);
+      yield();
+    }
+    delay(100); // debounce
+    touchController.getPoint(); // throw away last point
+  }
+
   if (!isCalibrationAvailable) {
-    Serial.println("Calibration not available");
+    Serial.println("Calibration data not available or force calibration initiated");
     touchController.startCalibration(&calibration);
     while (!touchController.isCalibrationFinished()) {
       gfx.fillBuffer(0);
@@ -217,6 +239,12 @@ void setup() {
     }
     touchController.saveCalibration();
   }
+
+  dividerTop = 64;
+  dividerBottom = gfx.getHeight() - dividerTop;
+  dividerMiddle = gfx.getWidth() / 2;
+
+  connectWifi();
 
   carousel.setFrames(frames, frameCount);
   carousel.disableAllIndicators();
@@ -236,19 +264,20 @@ TS_Point points[10];
 uint8_t currentTouchPoint = 0;
 
 void loop() {
-  static bool asleep = false; //  asleep used to stop screen change after touch for wake-up
+  static bool asleep = false;	//  asleep used to stop screen change after touch for wake-up
   gfx.fillBuffer(MINI_BLACK);
-  if (touchController.isTouched(0)) {
+
+  /* Break up the screen into 4 sections a touch in section:
+   * - Top changes the time format
+   * - Left back one page
+   * - Right forward one page
+   * - Bottom jump to page 0
+   */
+  if (touchController.isTouched(500)) {
     TS_Point p = touchController.getPoint();
     timerPress = millis();
-
-    Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
-    if (!asleep) { // no need to change screens;
-      if (p.y < 80) {
-        IS_STYLE_12HR = !IS_STYLE_12HR;
-      } else {
-        screen = (screen + 1) % screenCount;
-      }
+    if (!asleep) { 				// no need to update or change screens;
+    	screen = changeScreen(p, screen);
     }
   } // isTouched()
 
@@ -604,13 +633,11 @@ void drawForecastTable(uint8_t start) {
     gfx.setTextAlignment(TEXT_ALIGN_CENTER);
     time_t time = forecasts[i].observationTime;
     struct tm * timeinfo = localtime (&time);
-    //  Added 24hr / 12hr conversion  // 
-        if(IS_STYLE_12HR){
+    if (IS_STYLE_12HR) {
       gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(make12_24(timeinfo->tm_hour)));
     } else {
       gfx.drawString(120, y - 15, WDAY_NAMES[timeinfo->tm_wday] + " " + String(timeinfo->tm_hour) + ":00");
     }
-
 
     gfx.drawPalettedBitmapFromPgm(0, 5 + y, getMiniMeteoconIconFromProgmem(forecasts[i].icon));
     gfx.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -690,33 +717,32 @@ void calibrationCallback(int16_t x, int16_t y) {
   gfx.fillCircle(x, y, 10);
 }
 
-//  Added 24hr / 12hr conversion  // 
 String getTime(time_t *timestamp) {
   struct tm *timeInfo = localtime(timestamp);
 
-  //char buf[6];
   char buf[9];  // "12:34 pm\0"
-  char ampm[3]; ampm[0]='\0'; //Ready for 24hr clock
+  char ampm[3];
+  ampm[0]='\0'; //Ready for 24hr clock
   uint8_t hour = timeInfo->tm_hour;
 
-  if(IS_STYLE_12HR){
-    if(hour > 12){
+  if (IS_STYLE_12HR) {
+    if (hour > 12) {
       hour = hour - 12;
-      sprintf(ampm,"pm");
+      sprintf(ampm, "pm");
     } else {
-      sprintf(ampm,"am");
+      sprintf(ampm, "am");
     }
     sprintf(buf, "%2d:%02d %s", hour, timeInfo->tm_min, ampm);
-   } else {
+  } else {
     sprintf(buf, "%02d:%02d %s", hour, timeInfo->tm_min, ampm);
-   }
+  }
   return String(buf);
 }
 
 /*
- *  Convert hour from 24 hr time to 12 hr time
- *  @return cString with 2 digit hour + am or pm 
+ *  Convert hour from 24 hr time to 12 hr time.
  *
+ *  @return cString with 2 digit hour + am or pm 
  */
 char* make12_24(int hour){
   static char hr[6];
@@ -779,4 +805,33 @@ void loadPropertiesFromSpiffs() {
   } else {
     Serial.println("SPIFFS mount failed.");
   }
+}
+
+/*
+ * Change screen based on touchpoint location.
+ */
+uint8_t changeScreen(TS_Point p, uint8_t screen) {
+  uint8_t page = screen;
+
+  // Serial.printf("Touch point detected at %d/%d.\n", p.x, p.y);
+  // From the screen's point of view commented values for the 240 X 320 touch screen
+  // if (p.y < dividerTop)      Serial.print(" top ");    // < 80
+  // if (p.y > dividerBottom)   Serial.print(" bottom "); // > 240
+  // if (p.x > dividerMiddle)   Serial.print(" left ");   // > 120
+  // if (p.x <= dividerMiddle)  Serial.print(" right ");  // <= 120
+  // Serial.println();
+
+  if (p.y < dividerTop) {            // top -> change 12/24h style
+    IS_STYLE_12HR = !IS_STYLE_12HR;
+  } else if (p.y > dividerBottom) {  // bottom -> go to screen 0
+    page = 0;
+  } else if (p.x > dividerMiddle) {  // left -> previous page
+    if (page == 0) {            // Note type is unsigned
+      page = screenCount;       // Last screen is max -1
+    }
+    page--;
+  } else {                      // right -> next screen
+    page = (page + 1) % screenCount;
+  }
+  return page;
 }

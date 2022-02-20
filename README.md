@@ -34,3 +34,7 @@ ThingPulse runs a support forum for its customers that is better suited to answe
 ## Wiring
 
 The [wiring diagram](https://docs.thingpulse.com/specs/wifi-color-display-kit/#wiring) is only needed when you do _not_ buy the self-contained kit from ThingPulse but rather assemble the components yourself. The kit provides a custom PCB that solidly connects microcontroller and display.
+
+## Operation
+
+See ["Operation" in the official documentation](https://docs.thingpulse.com/guides/wifi-color-display-kit/#operation).
