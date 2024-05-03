@@ -28,7 +28,8 @@
 // Setup
 String WIFI_SSID = "yourssid";
 String WIFI_PASS = "yourpassw0rd";
-#define WIFI_HOSTNAME "ThingPulse-weather-station-color"
+// Limited to 31 chars
+#define WIFI_HOSTNAME "ThingPulse-weatherstation-color"
 
 const int UPDATE_INTERVAL_SECS = 10 * 60; // Update every 10 minutes
 const int SLEEP_INTERVAL_SECS = 0;        // Going to sleep after idle times, set 0 for insomnia
