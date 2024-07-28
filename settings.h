@@ -109,6 +109,7 @@ const char MOON_ICONS_SOUTH_WAXING[] = {64, 77, 76, 75, 74, 73, 72, 71, 70, 69, 
 #define TOUCH_CS D3
 #define TOUCH_IRQ  D4
 
+//#define ROTATE_180
 
 /***************************
  * End Settings

@@ -189,6 +189,9 @@ void setup() {
   digitalWrite(TFT_LED, HIGH);    // HIGH to Turn on;
 
   gfx.init();
+#ifdef ROTATE_180
+  gfx.setRotation(2); // Flip the screen 180
+#endif
   gfx.fillBuffer(MINI_BLACK);
   gfx.commit();
 
@@ -823,7 +826,7 @@ void loadPropertiesFromSpiffs() {
     Serial.println("Effective properties now as follows:");
     Serial.println("\tssid: " + WIFI_SSID);
     Serial.println("\tpassword: " + WIFI_PASS);
-    Serial.println("\timezone: " + TIMEZONE);
+    Serial.println("\ttimezone: " + TIMEZONE);
     Serial.println("\tOWM API key: " + OPEN_WEATHER_MAP_API_KEY);
     Serial.println("\tOWM location id: " + OPEN_WEATHER_MAP_LOCATION_ID);
     Serial.println("\tlocation name: " + DISPLAYED_LOCATION_NAME);
@@ -848,6 +851,7 @@ uint8_t changeScreen(TS_Point p, uint8_t screen) {
   // if (p.x <= dividerMiddle)  Serial.print(" right ");  // <= 120
   // Serial.println();
 
+#ifndef ROTATE_180
   if (p.y < dividerTop) {            // top -> change 12/24h style
     IS_STYLE_12HR = !IS_STYLE_12HR;
   } else if (p.y > dividerBottom) {  // bottom -> go to screen 0
@@ -860,5 +864,19 @@ uint8_t changeScreen(TS_Point p, uint8_t screen) {
   } else {                      // right -> next screen
     page = (page + 1) % screenCount;
   }
+#else
+  if (p.y > dividerBottom) {            // top -> change 12/24h style
+    IS_STYLE_12HR = !IS_STYLE_12HR;
+  } else if (p.y < dividerTop) {  // bottom -> go to screen 0
+    page = 0;
+  } else if (p.x < dividerMiddle) {  // left -> previous page
+    if (page == 0) {            // Note type is unsigned
+      page = screenCount;       // Last screen is max -1
+    }
+    page--;
+  } else {                      // right -> next screen
+    page = (page + 1) % screenCount;
+  }
+#endif
   return page;
 }
